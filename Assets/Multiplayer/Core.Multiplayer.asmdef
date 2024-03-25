@@ -1,0 +1,16 @@
+{
+    "name": "Core.Multiplayer",
+    "rootNamespace": "Core.Multiplayer",
+    "references": [
+        "GUID:505c541098c1774408483222f7271f52"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
