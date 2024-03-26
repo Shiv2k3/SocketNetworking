@@ -99,6 +99,8 @@ namespace Core.Multiplayer
         {
             try
             {
+			    if (m_socket.Available == 0) return;
+	   
                 Socket clientSocket = await m_socket.AcceptAsync();
                 Debug.Log("Added client");
                 Clients.Add(clientSocket);
