@@ -20,11 +20,11 @@ namespace Core.Multiplayer
 
         [SerializeField] private int TickRate = 128;
 
-        public bool Online { get; private set; }
+        [ShowInInspector] public bool Online { get; private set; }
         public IPAddress IP { get; private set; }
 
         private IPEndPoint m_endPoint;
-        private Socket m_socket;
+        private Socket m_listener;
 
         private List<Socket> Clients;
         private RawMessage Data;
@@ -45,7 +45,7 @@ namespace Core.Multiplayer
             IP = ipHost.AddressList[0];
 
             m_endPoint = new IPEndPoint(IP, PORT);
-            m_socket = new Socket(IP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            m_listener = new Socket(IP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             
             Clients = new(MAXCLIENTS);
 
@@ -59,16 +59,18 @@ namespace Core.Multiplayer
         [Button("Open")]
         private async void OpenServer()
         {
-            m_socket.Bind(m_endPoint);
-            m_socket.Listen(BACKLOG);
+            m_listener.Bind(m_endPoint);
+            m_listener.Listen(BACKLOG);
             Debug.Log("Server OPENED");
 
+
+            NewConnections();
             float t = Time;
             float tr = 1f / TickRate;
             while (Online)
             {
                 // Wait for new tick time
-                if (t + tr <= Time)
+                if (t + tr < Time)
                 {
                     Debug.Log("New tick isn't avaiable during " + t);
                     continue;
@@ -87,26 +89,20 @@ namespace Core.Multiplayer
                     Debug.LogWarning(dcClients.Count + " Client(s) DISCONNECTED");
                 }
 
-                // Establish new connections
-                await NewConnections();
-
+                await Task.Delay(1);
                 t = Time;
             }
 
         }
 
-        private async Task NewConnections()
+        private async void NewConnections()
         {
-            try
-            {
-			    if (m_socket.Available == 0) return;
-	   
-                Socket clientSocket = await m_socket.AcceptAsync();
-                Debug.Log("Added client");
-                Clients.Add(clientSocket);
-            }
-            catch (ObjectDisposedException) { }
-            catch (Exception e) { Debug.LogError(e); }
+            Socket clientSocket = await m_listener.AcceptAsync();
+            Debug.Log("Client CONNECTED");
+            Clients.Add(clientSocket);
+
+            if (Online)
+                NewConnections();
         }
 
         [Button("Close")]
@@ -123,7 +119,7 @@ namespace Core.Multiplayer
                 clientSocket.Close();
             }
 
-            m_socket.Close();
+            m_listener.Close();
 
             Clients.Clear();
             Clients = null;
