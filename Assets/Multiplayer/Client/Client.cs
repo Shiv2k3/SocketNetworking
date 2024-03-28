@@ -27,14 +27,14 @@ namespace Core.Multiplayer
         {
             await Socket.ConnectAsync(EndPoint);
 
-            Debug.Log($"Client CONNECTED");
+            Debug.Log($"Server CONNECTED");
         }
 
         public void DisconnectFromServer()
         {
             Socket.Shutdown(SocketShutdown.Both);
             Socket.Close();
-            Debug.Log($"Client DISCONNECTED");
+            Debug.Log($"Server DISCONNECTED");
         }
 
     }

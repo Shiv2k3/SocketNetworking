@@ -18,16 +18,16 @@ namespace Core.Multiplayer
         public const int BACKLOG = 10;
         public const int DATALENGTH = 1024;
 
-        [SerializeField] private int TickRate = 128;
-
-        public bool Online { get; private set; }
+        public bool Online { get => _online; private set => _online = value; }
         public IPAddress IP { get; private set; }
 
-        private IPEndPoint m_endPoint;
-        private Socket m_socket;
+        [SerializeField] private int _tickRate = 128;
+        [SerializeField] private bool _online = false;
+        [SerializeField] private bool _listening = false;
 
-        private List<Socket> Clients;
-        private RawMessage Data;
+        private IPEndPoint _endPoint;
+        private Socket _listener;
+        private List<Socket> _clients;
 
         [Button("Create")]
         private void CreateServer()
@@ -44,31 +44,32 @@ namespace Core.Multiplayer
             IPHostEntry ipHost = Dns.GetHostEntry(Dns.GetHostName());
             IP = ipHost.AddressList[0];
 
-            m_endPoint = new IPEndPoint(IP, PORT);
-            m_socket = new Socket(IP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            _endPoint = new IPEndPoint(IP, PORT);
+            _listener = new Socket(IP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             
-            Clients = new(MAXCLIENTS);
-
-            Data = new RawMessage(DATALENGTH);
+            _clients = new(MAXCLIENTS);
 
             Online = true;
 
             Debug.Log("Server CREATED");
         }
 
+        /// <summary>
+        /// Responsible for new connections and closing connections
+        /// </summary>
         [Button("Open")]
         private async void OpenServer()
         {
-            m_socket.Bind(m_endPoint);
-            m_socket.Listen(BACKLOG);
+            _listener.Bind(_endPoint);
+            _listener.Listen(BACKLOG);
             Debug.Log("Server OPENED");
 
             float t = Time;
-            float tr = 1f / TickRate;
+            float tr = 1f / _tickRate;
             while (Online)
             {
                 // Wait for new tick time
-                if (t + tr <= Time)
+                if (t + tr < Time)
                 {
                     Debug.Log("New tick isn't avaiable during " + t);
                     continue;
@@ -76,37 +77,50 @@ namespace Core.Multiplayer
 
                 // Check for disconnected clients
                 var dcClients = new List<Socket>();
-                foreach (var clientSock in Clients)
+                foreach (var clientSock in _clients)
                 {
                     if (!clientSock.IsConnected())
                         dcClients.Add(clientSock);
                 }
                 if (dcClients.Count > 0)
                 {
-                    Clients = Clients.Except(dcClients).ToList();
+                    _clients = _clients.Except(dcClients).ToList();
                     Debug.LogWarning(dcClients.Count + " Client(s) DISCONNECTED");
                 }
 
-                // Establish new connections
-                await NewConnections();
+                TryListen();
 
+                await Task.Delay(1);
                 t = Time;
             }
 
         }
 
-        private async Task NewConnections()
+        /// <summary>
+        /// Tries to establish new connections
+        /// </summary>
+        private async void TryListen()
         {
+            if (_listening) return;
+
             try
             {
-                Socket clientSocket = await m_socket.AcceptAsync();
-                Debug.Log("Added client");
-                Clients.Add(clientSocket);
+                _listening = true;
+                Socket clientSocket = await _listener.AcceptAsync();
+                Debug.Log("Client CONNECTED");
+                _clients.Add(clientSocket);
+                _listening = false;
             }
-            catch (ObjectDisposedException) { }
-            catch (Exception e) { Debug.LogError(e); }
+            catch (ObjectDisposedException)
+            {
+                _listening = false;
+            }
+            catch (Exception e) { throw e; }
         }
 
+        /// <summary>
+        /// Closes the server and releases resources
+        /// </summary>
         [Button("Close")]
         private void CloseServer()
         {
@@ -115,22 +129,19 @@ namespace Core.Multiplayer
 
             Online = false;
 
-            foreach (var clientSocket in Clients)
+            foreach (var clientSocket in _clients)
             {
                 clientSocket.Shutdown(SocketShutdown.Send);
                 clientSocket.Close();
             }
 
-            m_socket.Close();
+            _listener.Close();
+            _listening = false;
 
-            Clients.Clear();
-            Clients = null;
-
-            Data = null;
+            _clients.Clear();
+            _clients = null;
 
             Debug.Log("Server CLOSED");
         }
-
-        public static float Time => DateTime.Now.Second + DateTime.Now.Millisecond / 1000f;
     }
 }

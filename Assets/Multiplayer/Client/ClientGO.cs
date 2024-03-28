@@ -1,5 +1,5 @@
-﻿using Sirenix.OdinInspector;
-using System;
+﻿using Core.Util;
+using Sirenix.OdinInspector;
 using System.Net;
 using UnityEngine;
 
@@ -7,7 +7,7 @@ namespace Core.Multiplayer
 {
     public class ClientGO : MonoBehaviour
     {
-        [SerializeField] public Client client;
+        private Client client;
 
         [Button("Create Client")]
         private void CreateClient()
@@ -20,9 +20,9 @@ namespace Core.Multiplayer
         private async void Connect()
         {
             Debug.Log("Starting connection...");
-            float t = Server.Time;
+            float t = OL.Time;
             await client.ConnectToServer();
-            Debug.Log("Connection time: " + (Server.Time - t));
+            Debug.Log("Connection time: " + (OL.Time - t));
         }
 
         [Button("Disconnect From Server")]
