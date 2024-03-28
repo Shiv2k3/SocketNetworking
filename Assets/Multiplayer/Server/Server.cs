@@ -64,12 +64,12 @@ namespace Core.Multiplayer
             _listener.Listen(BACKLOG);
             Debug.Log("Server OPENED");
 
-            float t = Time;
+            float t = OL.Time;
             float tr = 1f / _tickRate;
             while (Online)
             {
                 // Wait for new tick time
-                if (t + tr < Time)
+                if (t + tr < OL.Time)
                 {
                     Debug.Log("New tick isn't avaiable during " + t);
                     continue;
@@ -91,7 +91,7 @@ namespace Core.Multiplayer
                 TryListen();
 
                 await Task.Delay(1);
-                t = Time;
+                t = OL.Time;
             }
 
         }
