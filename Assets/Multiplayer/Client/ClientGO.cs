@@ -9,7 +9,7 @@ namespace Core.Multiplayer
     {
         private Client client;
 
-        [Button("Create Client")]
+        [Button("New Client")]
         private void CreateClient()
         {
             IPHostEntry ipHost = Dns.GetHostEntry(Dns.GetHostName());
@@ -25,7 +25,7 @@ namespace Core.Multiplayer
             Debug.Log("Connection time: " + (OL.Time - t));
         }
 
-        [Button("Disconnect From Server")]
+        [Button("Disconnect Server")]
         private void Disconnect()
         {
             client.DisconnectFromServer();

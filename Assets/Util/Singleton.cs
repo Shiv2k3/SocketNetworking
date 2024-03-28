@@ -1,23 +1,23 @@
 using System;
 using UnityEngine;
 
-/// <summary>
-///     This is a generic Singleton implementation for Monobehaviours.
-///     Create a derived class where the type T is the script you want to "Singletonize"
-///     Upon loading it will call DontDestroyOnLoad on the gameobject where this script is contained
-///     so it persists upon scene changes.
-/// </summary>
-/// <remarks>
-///     DO NOT REDEFINE Awake() Start() or OnDestroy() in derived classes. EVER.
-///     Instead, use protected virtual methods:
-///     SingletonAwakened()
-///     SingletonStarted()
-///     SingletonDestroyed()
-///     to perform the initialization/cleanup: those methods are guaranteed to only be called once in the
-///     entire lifetime of the MonoBehaviour
-/// </remarks>
 namespace Core.Util
 {
+    /// <summary>
+    ///     This is a generic Singleton implementation for Monobehaviours.
+    ///     Create a derived class where the type T is the script you want to "Singletonize"
+    ///     Upon loading it will call DontDestroyOnLoad on the gameobject where this script is contained
+    ///     so it persists upon scene changes.
+    /// </summary>
+    /// <remarks>
+    ///     DO NOT REDEFINE Awake() Start() or OnDestroy() in derived classes. EVER.
+    ///     Instead, use protected virtual methods:
+    ///     SingletonAwakened()
+    ///     SingletonStarted()
+    ///     SingletonDestroyed()
+    ///     to perform the initialization/cleanup: those methods are guaranteed to only be called once in the
+    ///     entire lifetime of the MonoBehaviour
+    /// </remarks>
     public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {
         /// <summary>
