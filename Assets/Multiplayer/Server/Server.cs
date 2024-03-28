@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using UnityEngine;
 using System.Linq;
+using System.Text;
 
 namespace Core.Multiplayer
 {
@@ -54,9 +55,6 @@ namespace Core.Multiplayer
             Debug.Log("Server CREATED");
         }
 
-        /// <summary>
-        /// Responsible for new connections and closing connections
-        /// </summary>
         [Button("Open")]
         private async void OpenServer()
         {
@@ -89,11 +87,25 @@ namespace Core.Multiplayer
                 }
 
                 TryListen();
+                foreach (var client in _clients)
+                {
+                    CheckMessage(client);
+                }
 
                 await Task.Delay(1);
                 t = OL.Time;
             }
 
+        }
+
+        private void CheckMessage(Socket s)
+        {
+            if(s.Available > 0)
+            {
+                RawMessage m = new(DATALENGTH);
+                s.Receive(m.Buffer);
+                Debug.Log(Encoding.UTF8.GetString(m.Buffer));
+            }
         }
 
         /// <summary>

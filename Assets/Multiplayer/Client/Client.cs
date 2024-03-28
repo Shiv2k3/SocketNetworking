@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
 using System.Threading.Tasks;
+using System;
+using System.Text;
 
 namespace Core.Multiplayer
 {
@@ -28,6 +30,12 @@ namespace Core.Multiplayer
             await Socket.ConnectAsync(EndPoint);
 
             Debug.Log($"Server CONNECTED");
+        }
+
+        public async Task SendMessage(string msg)
+        {
+            Data.RawMessage m = new(Encoding.UTF8.GetBytes(msg));
+            await Socket.SendAsync(m.MemoryBuffer, SocketFlags.None);
         }
 
         public void DisconnectFromServer()
