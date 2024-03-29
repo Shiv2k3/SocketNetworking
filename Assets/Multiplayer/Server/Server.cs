@@ -104,7 +104,7 @@ namespace Core.Multiplayer
             {
                 RawMessage m = new(DATALENGTH);
                 s.Receive(m.Buffer);
-                Debug.Log(Encoding.UTF8.GetString(m.Buffer));
+                Debug.Log("Client message: " + Encoding.UTF8.GetString(m.Buffer));
             }
         }
 

@@ -7,15 +7,12 @@ namespace Core.Multiplayer
 {
     public class ClientGO : MonoBehaviour
     {
-        [SerializeField] private string message;
-
-        private Client client;
+        protected Client client;
         [Button("New Client")]
-        private void CreateClient()
+        protected virtual void CreateClient()
         {
             IPHostEntry ipHost = Dns.GetHostEntry(Dns.GetHostName());
             client = new(ipHost.AddressList[0]);
-            message = "Hello server, this is client #" + Random.Range(69, 421);
         }
 
         [Button("Connect To Server")]
@@ -25,12 +22,6 @@ namespace Core.Multiplayer
             float t = OL.Time;
             await client.ConnectToServer();
             Debug.Log("Connection time: " + (OL.Time - t));
-        }
-
-        [Button("Send Message")]
-        private void SendMessage()
-        {
-            _ = client.SendMessage(message);
         }
 
         [Button("Disconnect Server")]

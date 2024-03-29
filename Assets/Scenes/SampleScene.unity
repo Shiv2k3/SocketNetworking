@@ -135,9 +135,8 @@ GameObject:
   - component: {fileID: 944338815}
   - component: {fileID: 944338816}
   - component: {fileID: 944338817}
-  - component: {fileID: 944338819}
   m_Layer: 0
-  m_Name: Multiplayer
+  m_Name: Network
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -187,7 +186,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d4a9ab6771ec224481218e4568c11a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  message: 
 --- !u!114 &944338817
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -197,23 +195,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 944338809}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d4a9ab6771ec224481218e4568c11a1, type: 3}
+  m_Script: {fileID: 11500000, guid: 924efc9888860e94c9a4f5914b9ebb88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  message: 
---- !u!114 &944338819
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 944338809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d4a9ab6771ec224481218e4568c11a1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  message: 
+  message: Hello server, this is client #93
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
