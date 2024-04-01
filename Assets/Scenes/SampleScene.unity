@@ -172,8 +172,11 @@ MonoBehaviour:
   ScenePersistent: 0
   PrintTrace: 0
   _tickRate: 128
-  _online: 1
-  _listening: 1
+  _tick: 0
+  _lastTickTime: 0
+  _tickLength: 0
+  _online: 0
+  _listening: 0
 --- !u!114 &944338816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -198,7 +201,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 924efc9888860e94c9a4f5914b9ebb88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  message: Hello server, this is client #93
+  message: Hello server, this is client #159
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

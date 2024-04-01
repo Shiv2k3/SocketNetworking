@@ -8,6 +8,7 @@ namespace Core.Multiplayer
     public class ClientGO : MonoBehaviour
     {
         protected Client client;
+
         [Button("New Client")]
         protected virtual void CreateClient()
         {

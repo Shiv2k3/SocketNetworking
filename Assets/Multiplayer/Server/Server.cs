@@ -8,7 +8,6 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using UnityEngine;
 using System.Linq;
-using System.Text;
 
 namespace Core.Multiplayer
 {
@@ -23,8 +22,12 @@ namespace Core.Multiplayer
         public IPAddress IP { get; private set; }
 
         [SerializeField] private int _tickRate = 128;
-        [SerializeField] private bool _online = false;
-        [SerializeField] private bool _listening = false;
+
+        [SerializeField, ReadOnly] private int _tick = 0;
+        [SerializeField, ReadOnly] private float _lastTickTime = 0;
+        [SerializeField, ReadOnly] private float _tickLength = 0;
+        [SerializeField, ReadOnly] private bool _online = false;
+        [SerializeField, ReadOnly] private bool _listening = false;
 
         private IPEndPoint _endPoint;
         private Socket _listener;
@@ -50,61 +53,66 @@ namespace Core.Multiplayer
             
             _clients = new(MAXCLIENTS);
 
-            Online = true;
+            _tickLength = 1f / _tickRate;
 
             Debug.Log("Server CREATED");
         }
 
         [Button("Open")]
-        private async void OpenServer()
+        private void OpenServer()
         {
             _listener.Bind(_endPoint);
             _listener.Listen(BACKLOG);
-            Debug.Log("Server OPENED");
+            Online = true;
 
-            float t = OL.Time;
-            float tr = 1f / _tickRate;
-            while (Online)
+            Debug.Log("Server OPENED");            
+        }
+
+        private void Update()
+        {
+            // Wait for next tick time
+            if (!Online || _lastTickTime + _tickLength > OL.Time)
             {
-                // Wait for new tick time
-                if (t + tr < OL.Time)
-                {
-                    Debug.Log("New tick isn't avaiable during " + t);
-                    continue;
-                }
-
-                // Check for disconnected clients
-                var dcClients = new List<Socket>();
-                foreach (var clientSock in _clients)
-                {
-                    if (!clientSock.IsConnected())
-                        dcClients.Add(clientSock);
-                }
-                if (dcClients.Count > 0)
-                {
-                    _clients = _clients.Except(dcClients).ToList();
-                    Debug.LogWarning(dcClients.Count + " Client(s) DISCONNECTED");
-                }
-
-                TryListen();
-                foreach (var client in _clients)
-                {
-                    CheckMessage(client);
-                }
-
-                await Task.Delay(1);
-                t = OL.Time;
+                return;
             }
 
+            // next tick starts
+            _lastTickTime = OL.Time;
+
+            // Check for disconnected clients
+            var dcClients = new List<Socket>();
+            foreach (var clientSock in _clients)
+            {
+                if (!clientSock.IsConnected())
+                    dcClients.Add(clientSock);
+            }
+            if (dcClients.Count > 0)
+            {
+                _clients = _clients.Except(dcClients).ToList();
+                Debug.LogWarning(dcClients.Count + " Client(s) DISCONNECTED");
+            }
+
+            // Connect new clients
+            TryListen();
+
+            // Read messages
+            foreach (var client in _clients)
+            {
+                CheckMessage(client);
+            }
+
+            // Update timings
+            _tick = ++_tick % _tickRate;
         }
 
         private void CheckMessage(Socket s)
         {
             if(s.Available > 0)
             {
-                RawMessage m = new(DATALENGTH);
-                s.Receive(m.Buffer);
-                Debug.Log("Client message: " + Encoding.UTF8.GetString(m.Buffer));
+                Payload p = new(Payload.DataType.Text, new byte[DATALENGTH]);
+                s.Receive(p.data);
+                p.DecodeText(out var msg);
+                Debug.Log("Client message: " + msg);
             }
         }
 
@@ -122,6 +130,9 @@ namespace Core.Multiplayer
                 Debug.Log("Client CONNECTED");
                 _clients.Add(clientSocket);
                 _listening = false;
+
+                //clientSocket.Send(new byte[2] { (byte)_tickRate, (byte)_tick }, 2, SocketFlags.None);
+                //Debug.Log("Time SENT");
             }
             catch (ObjectDisposedException)
             {
@@ -140,6 +151,7 @@ namespace Core.Multiplayer
                 throw new("Server OFFLINE");
 
             Online = false;
+            _tick = 0;
 
             foreach (var clientSocket in _clients)
             {
@@ -152,6 +164,7 @@ namespace Core.Multiplayer
 
             _clients.Clear();
             _clients = null;
+
 
             Debug.Log("Server CLOSED");
         }

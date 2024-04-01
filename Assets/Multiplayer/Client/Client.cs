@@ -2,8 +2,8 @@ using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
 using System.Threading.Tasks;
-using System;
 using System.Text;
+using Core.Multiplayer.Data;
 
 namespace Core.Multiplayer
 {
@@ -15,6 +15,7 @@ namespace Core.Multiplayer
         public IPAddress IP { get; }
         public Socket Socket { get; private set; }
         public IPEndPoint EndPoint { get; }
+        public int TickRate { get; private set; }
 
         public Client(IPAddress ip)
         {
@@ -28,14 +29,21 @@ namespace Core.Multiplayer
         public async Task ConnectToServer()
         {
             await Socket.ConnectAsync(EndPoint);
-
             Debug.Log($"Server CONNECTED");
+
+            //Debug.Log($"Server SYNCING");
+            //Payload load = new(Payload.DataType.Time, new byte[2]);
+            //Socket.Receive(load.data, 2, SocketFlags.None);
+            //load.DecodeTime(out var tickRate, out var currentTick);
+            //Debug.Log("Tick rate: " + tickRate + ", current tick: " + currentTick);
+
+            //Debug.Log("Server SYNCED");
         }
 
         public async Task SendMessage(string msg)
         {
-            Data.RawMessage m = new(Encoding.UTF8.GetBytes(msg));
-            await Socket.SendAsync(m.MemoryBuffer, SocketFlags.None);
+            Payload p = new(Payload.DataType.Text, Encoding.UTF8.GetBytes(msg));
+            await Socket.SendAsync(p.data, SocketFlags.None);
         }
 
         public void DisconnectFromServer()
