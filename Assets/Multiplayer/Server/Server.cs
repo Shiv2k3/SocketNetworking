@@ -109,8 +109,9 @@ namespace Core.Multiplayer
         {
             if(s.Available > 0)
             {
-                Payload p = new(Payload.DataType.Text, new byte[DATALENGTH]);
-                s.Receive(p.data);
+                byte[] data = new byte[DATALENGTH];
+                int count = s.Receive(data);
+                Payload p = new(Payload.DataType.Text, data, count);
                 p.DecodeText(out var msg);
                 Debug.Log("Client message: " + msg);
             }

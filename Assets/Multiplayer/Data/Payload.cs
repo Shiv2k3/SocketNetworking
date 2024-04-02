@@ -7,7 +7,8 @@ namespace Core.Multiplayer.Data
 {
     public readonly unsafe struct Payload
     {
-        private const int HEADERLENGTH = 2;
+        private const int HEADERLENGTH = 3;
+        private const int MAXLENGTH = int.MaxValue >> 16;
         public enum DataType
         {
             /// <summary>
@@ -39,7 +40,9 @@ namespace Core.Multiplayer.Data
         /// <summary>
         /// The length of the data
         /// </summary>
-        public readonly int Length { get => _stream[1]; }
+        public readonly int Length { get => _stream[1] | (_stream[2] << 8); }
+
+        public byte[] data { get => Array.CreateInstance(; }
 
         /// <summary>
         /// The data stream
@@ -53,9 +56,14 @@ namespace Core.Multiplayer.Data
 
         /// <summary>
         /// Creates payload from data
-        /// <summary> 
+        /// </summary>
+        /// <param name="type"> Type of data </param>
+        /// <param name="data"> The data </param>
         public Payload(DataType type, byte[] data) : this()
         {
+            // check if data length is valid
+            Assert.IsTrue(data.Length <= MAXLENGTH);
+
             // create stream
             byte[] arr = new byte[data.Length + HEADERLENGTH];
             _stream = (byte*)&arr;
@@ -63,7 +71,28 @@ namespace Core.Multiplayer.Data
             
             // populate stream
             _stream[0] = (byte)type;
+            _stream[1] = (byte)(data.Length & byte.MaxValue);
+            _stream[2] = (byte)(data.Length & (byte.MaxValue << 8));
             Buffer.MemoryCopy(&data, _data, data.Length, data.Length);
+        }
+        /// <summary>
+        /// Creates payload from data
+        /// </summary>
+        /// <param name="type"> Type of data </param>
+        /// <param name="data"> The data </param>
+        /// <param name="count"> Amount to copy </param>
+        public Payload(DataType type, byte[] data, int count) : this()
+        {
+            // create stream
+            byte[] arr = new byte[count + HEADERLENGTH];
+            _stream = (byte*)&arr;
+            _data = _stream + HEADERLENGTH;
+
+            // populate stream
+            _stream[0] = (byte)type;
+            _stream[1] = (byte)(count & byte.MaxValue);
+            _stream[2] = (byte)(count & (byte.MaxValue << 8));
+            Buffer.MemoryCopy(&data, _data, count, count);
         }
         /// <summary>
         /// Extracts payload from stream
