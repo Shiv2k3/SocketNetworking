@@ -4,7 +4,7 @@ using UnityEngine.Assertions;
 
 namespace Core.Multiplayer.Data
 {
-    public struct Payload
+    public unsafe struct Payload
     {
         public enum DataType
         {
@@ -32,20 +32,42 @@ namespace Core.Multiplayer.Data
         /// <summary>
         /// Repersents <see cref="Type"/> of data
         /// </summary>
-        public DataType Type { readonly get => (DataType)t; set => t = (byte)value; }
-        private byte t;
+        public DataType Type { readonly get => (DataType)data[0]; }
 
         /// <summary>
-        /// The transmission
+        /// The data stream
         /// </summary>
-        public byte[] data;
+        private byte* _stream;
 
+        /// <summary>
+        /// The payload
+        /// <summary>
+        private byte* _data;
+
+        /// <summary>
+        /// Creates payload from data
+        /// <summary> 
         public Payload(DataType type, byte[] data) : this()
         {
-            Type = type;
-            this.data = data;
+            // create stream
+            _stream = new byte[data.Length + 1];
+            _data = _stream + 1;
+            
+            // populate stream
+            _stream[0] = type;
+            Buffer.MemoryCopy(data, _data, data.Length, data.Length);
         }
-
+        /// <summary>
+        /// Extracts payload from stream
+        /// <summary>
+        public Payload(byte[] stream) : this()
+        {
+            // Extract stream
+            _stream = new byte[stream.Length];
+            _data = _stream + 1;
+            Buffer.MemoryCopy(stream, _stream, stream.Length, stream.Length);
+        }
+        
         public readonly void DecodeTime(out int tickRate, out int currentTick)
         {
             // tickrate 1 byte, current tick 1 byte, 2 bytes
