@@ -163,26 +163,27 @@ namespace Core.Multiplayer.Data
         }
     }
 
-    public class PayloadData { }
+    public class PayloadData
+    {
+        protected Payload payload;
+    }
     public abstract class PayloadWrapper<T> where T : PayloadData
     {
-        public abstract Payload Encode();
-        public abstract T Decode();
+        public readonly PayloadData data { public get; }
+        public abstract PayloadWrapper<T>(T data);
+        public abstract PayloadWrapper<T>(Payload payload);
     }
 
-    public class Info : PayloadData
+    public class Movement : PayloadData
     {
-        public bool moving;
+        public Vector2 Horizontal;
+        public Vector2 Rotation;
+        public bool Jump;
+        public bool Crouch;
+        public bool Sprint;
     }
-    public class MovementPayload : PayloadWrapper<Info>
+    public class MovementPayload : PayloadWrapper<Movement>
     {
-        public override Payload Encode()
-        {
-            throw new NotImplementedException();
-        }
-        public override Info Decode()
-        {
-            throw new NotImplementedException();
-        }
+        
     }
 }
