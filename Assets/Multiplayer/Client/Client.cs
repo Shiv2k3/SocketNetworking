@@ -43,7 +43,7 @@ namespace Core.Multiplayer
         public async Task SendMessage(string msg)
         {
             Payload p = new(Payload.DataType.Text, Encoding.UTF8.GetBytes(msg));
-            await Socket.SendAsync(p., SocketFlags.None);
+            await Socket.SendAsync(p.Stream, SocketFlags.None);
         }
 
         public void DisconnectFromServer()

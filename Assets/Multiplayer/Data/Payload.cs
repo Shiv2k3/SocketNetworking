@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -35,45 +36,42 @@ namespace Core.Multiplayer.Data
         /// <summary>
         /// Repersents <see cref="Type"/> of data
         /// </summary>
-        public readonly DataType Type { get => (DataType)_stream[0]; }
+        public readonly DataType Type { get => (DataType)Stream[0]; }
 
         /// <summary>
         /// The length of the data
         /// </summary>
-        public readonly int Length { get => _stream[1] | (_stream[2] << 8); }
-
-        public byte[] data { get => Array.CreateInstance(; }
+        public readonly int Length { get => Stream[1] | (Stream[2] << 8); }
 
         /// <summary>
         /// The data stream
         /// </summary>
-        private readonly byte* _stream;
+        public readonly byte[] Stream;
 
         /// <summary>
         /// The payload
         /// <summary>
-        private readonly byte* _data;
+        public readonly byte[] Data;
 
         /// <summary>
         /// Creates payload from data
         /// </summary>
         /// <param name="type"> Type of data </param>
         /// <param name="data"> The data </param>
-        public Payload(DataType type, byte[] data) : this()
+        public Payload(DataType type, byte[] data)
         {
             // check if data length is valid
             Assert.IsTrue(data.Length <= MAXLENGTH);
 
             // create stream
-            byte[] arr = new byte[data.Length + HEADERLENGTH];
-            _stream = (byte*)&arr;
-            _data = _stream + HEADERLENGTH;
-            
-            // populate stream
-            _stream[0] = (byte)type;
-            _stream[1] = (byte)(data.Length & byte.MaxValue);
-            _stream[2] = (byte)(data.Length & (byte.MaxValue << 8));
-            Buffer.MemoryCopy(&data, _data, data.Length, data.Length);
+            Stream = new byte[data.Length + HEADERLENGTH];
+            Stream[0] = (byte)type;
+            Stream[1] = (byte)(data.Length & byte.MaxValue);
+            Stream[2] = (byte)(data.Length & (byte.MaxValue << 8));
+
+            // populate data
+            Array.Copy(data, 0, Stream, HEADERLENGTH, data.Length);
+            Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
         }
         /// <summary>
         /// Creates payload from data
@@ -81,45 +79,49 @@ namespace Core.Multiplayer.Data
         /// <param name="type"> Type of data </param>
         /// <param name="data"> The data </param>
         /// <param name="count"> Amount to copy </param>
-        public Payload(DataType type, byte[] data, int count) : this()
+        public Payload(DataType type, byte[] data, int count)
         {
             // create stream
-            byte[] arr = new byte[count + HEADERLENGTH];
-            _stream = (byte*)&arr;
-            _data = _stream + HEADERLENGTH;
+            Stream = new byte[count + HEADERLENGTH];
+            Stream[0] = (byte)type;
+            Stream[1] = (byte)(count & byte.MaxValue);
+            Stream[2] = (byte)(count & (byte.MaxValue << 8));
 
-            // populate stream
-            _stream[0] = (byte)type;
-            _stream[1] = (byte)(count & byte.MaxValue);
-            _stream[2] = (byte)(count & (byte.MaxValue << 8));
-            Buffer.MemoryCopy(&data, _data, count, count);
+            // populate data
+            Array.Copy(data, 0, Stream, HEADERLENGTH, count);
+            Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
         }
         /// <summary>
         /// Extracts payload from stream
         /// <summary>
-        public Payload(byte[] stream) : this()
+        public Payload(byte[] stream)
         {
             // Extract stream
-            byte[] arr = new byte[stream.Length];
-            _stream = (byte*)&arr;
-            _data = _stream + HEADERLENGTH;
-            Buffer.MemoryCopy(&stream, _stream, stream.Length, stream.Length);
+            Stream = new byte[stream.Length];
+            Array.Copy(stream, Stream, stream.Length);
+            Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
         }
-        
+        public Payload(byte[] stream, int count)
+        {
+            // Extract stream
+            Stream = new byte[count];
+            Array.Copy(stream, Stream, count);
+            Data = new ArraySegment<byte>(Stream, HEADERLENGTH, count - HEADERLENGTH).ToArray();
+        }
+
         public readonly void DecodeTime(out int tickRate, out int currentTick)
         {
             // tickrate 1 byte, current tick 1 byte, 2 bytes
             const int Length = 2;
             Assert.IsTrue(Type == DataType.Time && this.Length == Length);
             
-            tickRate = _data[0];
-            currentTick = _data[1];
+            tickRate = Data[0];
+            currentTick = Data[1];
         }
         public readonly void DecodeText(out string message)
         {
             Assert.IsTrue(Type == DataType.Text);
-            
-            message = Encoding.UTF8.GetString(_data, Length);
+            message = Encoding.UTF8.GetString(Data);
         }
         public readonly void DecodeInput(out Vector2Int movement, out int vertical, out bool sprint, out Vector2Int look)
         {
@@ -127,17 +129,17 @@ namespace Core.Multiplayer.Data
             const int Length = 2;
             Assert.IsTrue(Type == DataType.Input && this.Length == Length);
 
-            int w      = _data[0] & 1;
-            int a      = _data[0] & 2;
-            int s      = _data[0] & 4;
-            int d      = _data[0] & 8;
-            int jump   = _data[0] & 16;
-            int crouch = _data[0] & 32;
-            int shift  = _data[0] & 64;
-            int left   = _data[0] & 128;
-            int right  = _data[1] & 1;
-            int up     = _data[1] & 2;
-            int down   = _data[1] & 4;
+            int w      = Data[0] & 1;
+            int a      = Data[0] & 2;
+            int s      = Data[0] & 4;
+            int d      = Data[0] & 8;
+            int jump   = Data[0] & 16;
+            int crouch = Data[0] & 32;
+            int shift  = Data[0] & 64;
+            int left   = Data[0] & 128;
+            int right  = Data[1] & 1;
+            int up     = Data[1] & 2;
+            int down   = Data[1] & 4;
 
             movement = new(d - a, w - s);
             vertical = jump - crouch;
@@ -154,11 +156,11 @@ namespace Core.Multiplayer.Data
             rotation = Vector3.zero;
             for (int i = 0; i < 3; i++)
             {
-                position[i] = BytesToFloat(_data, i * 4);
-                rotation[i] = BytesToFloat(_data, i * 4 + 12);
+                position[i] = BytesToFloat(Data, i * 4);
+                rotation[i] = BytesToFloat(Data, i * 4 + 12);
             }
 
-            static float BytesToFloat(byte* arr, int s) => arr[s] << 24 | arr[s + 1] << 16 | arr[s + 2] << 8 | arr[s + 3];
+            static float BytesToFloat(byte[] arr, int s) => arr[s] << 24 | arr[s + 1] << 16 | arr[s + 2] << 8 | arr[s + 3];
         }
     }
 }

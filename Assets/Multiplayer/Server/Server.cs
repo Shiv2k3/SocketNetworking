@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using UnityEngine;
 using System.Linq;
+using UnityEditor;
 
 namespace Core.Multiplayer
 {
@@ -36,6 +37,9 @@ namespace Core.Multiplayer
         [Button("Create")]
         private void CreateServer()
         {
+            if (Application.isEditor && !Application.isPlaying)
+                Debug.LogWarning("The game isn't running, some functions may not work properly");
+
             if (Online)
             {
                 try
@@ -109,9 +113,9 @@ namespace Core.Multiplayer
         {
             if(s.Available > 0)
             {
-                byte[] data = new byte[DATALENGTH];
-                int count = s.Receive(data);
-                Payload p = new(Payload.DataType.Text, data, count);
+                byte[] stream = new byte[DATALENGTH];
+                int count = s.Receive(stream);
+                Payload p = new(stream, count);
                 p.DecodeText(out var msg);
                 Debug.Log("Client message: " + msg);
             }
