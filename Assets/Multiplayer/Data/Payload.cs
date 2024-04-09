@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -161,6 +160,29 @@ namespace Core.Multiplayer.Data
             }
 
             static float BytesToFloat(byte[] arr, int s) => arr[s] << 24 | arr[s + 1] << 16 | arr[s + 2] << 8 | arr[s + 3];
+        }
+    }
+
+    public class PayloadData { }
+    public abstract class PayloadWrapper<T> where T : PayloadData
+    {
+        public abstract Payload Encode();
+        public abstract T Decode();
+    }
+
+    public class Info : PayloadData
+    {
+        public bool moving;
+    }
+    public class MovementPayload : PayloadWrapper<Info>
+    {
+        public override Payload Encode()
+        {
+            throw new NotImplementedException();
+        }
+        public override Info Decode()
+        {
+            throw new NotImplementedException();
         }
     }
 }
