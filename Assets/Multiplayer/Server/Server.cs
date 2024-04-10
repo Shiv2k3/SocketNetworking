@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Core.Multiplayer
 {
@@ -31,6 +32,7 @@ namespace Core.Multiplayer
         private IPEndPoint _endPoint;
         private Socket _listener;
         private List<Socket> _clients;
+        private Queue<Task> _tasks;
 
         [Button("Create")]
         private void CreateServer()
@@ -66,10 +68,8 @@ namespace Core.Multiplayer
             _listener.Bind(_endPoint);
             _listener.Listen(BACKLOG);
             Online = true;
-
-            Debug.Log("Server OPENED");            
+            Debug.Log("Server OPENED");
         }
-
         private void Update()
         {
             // Wait for next tick time
@@ -109,12 +109,21 @@ namespace Core.Multiplayer
 
         private void CheckMessage(Socket s)
         {
-            if(s.Available > 0)
+            if (s.Available > 0)
             {
                 byte[] stream = new byte[DATALENGTH];
                 int count = s.Receive(stream);
-                TextMessage msg = new(new Payload(stream, count));
-                Debug.Log("Client message: " + msg.Message.ToString());
+                Payload payload = new Payload(stream, count);
+                int expected = payload.Length + Payload.HEADERLENGTH;
+                if (count != expected)
+                {
+                    byte[] stream2 = new byte[expected];
+                    Array.Copy(stream, stream2, count);
+                    s.Receive(stream2, count, expected - count, SocketFlags.None);
+                }
+
+                TextMessage msg = new(payload);
+                Debug.Log("Client message: " + msg.Message);
             }
         }
 

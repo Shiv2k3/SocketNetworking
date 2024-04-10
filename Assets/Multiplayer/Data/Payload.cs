@@ -1,12 +1,11 @@
 ﻿using System;
-using UnityEngine.Assertions;
 
 namespace Core.Multiplayer.Data
 {
     public readonly unsafe struct Payload
     {
-        private const int HEADERLENGTH = 3;
-        private const int MAXLENGTH = int.MaxValue >> 16;
+        public const int HEADERLENGTH = 3;
+        public const int MAXDATALENGTH = int.MaxValue >> 16;
         public enum DataType
         {
             /// <summary>
@@ -57,14 +56,14 @@ namespace Core.Multiplayer.Data
         /// <param name="data"> The data </param>
         public Payload(DataType type, byte[] data)
         {
-            // check if data length is valid
-            Assert.IsTrue(data.Length <= MAXLENGTH);
+            if (data.Length > MAXDATALENGTH)
+                throw new("Data is too large");
 
             // create stream
             Stream = new byte[data.Length + HEADERLENGTH];
             Stream[0] = (byte)type;
             Stream[1] = (byte)(data.Length & byte.MaxValue);
-            Stream[2] = (byte)(data.Length & (byte.MaxValue << 8));
+            Stream[2] = (byte)(data.Length >> 8 & byte.MaxValue);
 
             // populate data
             Array.Copy(data, 0, Stream, HEADERLENGTH, data.Length);
@@ -78,6 +77,9 @@ namespace Core.Multiplayer.Data
         /// <param name="count"> Amount to copy </param>
         public Payload(DataType type, byte[] data, int count)
         {
+            if (data.Length > MAXDATALENGTH)
+                throw new("Data is too large");
+
             // create stream
             Stream = new byte[count + HEADERLENGTH];
             Stream[0] = (byte)type;
@@ -88,6 +90,7 @@ namespace Core.Multiplayer.Data
             Array.Copy(data, 0, Stream, HEADERLENGTH, count);
             Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
         }
+
         /// <summary>
         /// Extracts payload from stream
         /// <summary>
