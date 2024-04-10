@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Text;
-using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace Core.Multiplayer.Data
@@ -100,6 +98,11 @@ namespace Core.Multiplayer.Data
             Array.Copy(stream, Stream, stream.Length);
             Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
         }
+        /// <summary>
+        /// Extracts payload from stream using count
+        /// </summary>
+        /// <param name="stream">the payload stream</param>
+        /// <param name="count">number of bytes to use</param>
         public Payload(byte[] stream, int count)
         {
             // Extract stream
@@ -107,83 +110,10 @@ namespace Core.Multiplayer.Data
             Array.Copy(stream, Stream, count);
             Data = new ArraySegment<byte>(Stream, HEADERLENGTH, count - HEADERLENGTH).ToArray();
         }
-
-        public readonly void DecodeTime(out int tickRate, out int currentTick)
-        {
-            // tickrate 1 byte, current tick 1 byte, 2 bytes
-            const int Length = 2;
-            Assert.IsTrue(Type == DataType.Time && this.Length == Length);
-            
-            tickRate = Data[0];
-            currentTick = Data[1];
-        }
-        public readonly void DecodeText(out string message)
-        {
-            Assert.IsTrue(Type == DataType.Text);
-            message = Encoding.UTF8.GetString(Data);
-        }
-        public readonly void DecodeInput(out Vector2Int movement, out int vertical, out bool sprint, out Vector2Int look)
-        {
-            // each bit repersents input for w, a, s, d, jump, crouch, shift, left, right, up, down, 11 bits or 2 bytes
-            const int Length = 2;
-            Assert.IsTrue(Type == DataType.Input && this.Length == Length);
-
-            int w      = Data[0] & 1;
-            int a      = Data[0] & 2;
-            int s      = Data[0] & 4;
-            int d      = Data[0] & 8;
-            int jump   = Data[0] & 16;
-            int crouch = Data[0] & 32;
-            int shift  = Data[0] & 64;
-            int left   = Data[0] & 128;
-            int right  = Data[1] & 1;
-            int up     = Data[1] & 2;
-            int down   = Data[1] & 4;
-
-            movement = new(d - a, w - s);
-            vertical = jump - crouch;
-            sprint = shift == 1;
-            look = new(right - left, up - down);
-        }
-        public readonly void DecodeTransform(out Vector3 position, out Vector3 rotation)
-        {
-            // 4 bytes for each position component and 4 bytes for each rotation component
-            const int Length = 24;
-            Assert.IsTrue(Type == DataType.Transform && this.Length == Length);
-
-            position = Vector3.zero;
-            rotation = Vector3.zero;
-            for (int i = 0; i < 3; i++)
-            {
-                position[i] = BytesToFloat(Data, i * 4);
-                rotation[i] = BytesToFloat(Data, i * 4 + 12);
-            }
-
-            static float BytesToFloat(byte[] arr, int s) => arr[s] << 24 | arr[s + 1] << 16 | arr[s + 2] << 8 | arr[s + 3];
-        }
     }
 
     public class PayloadData
     {
-        protected Payload payload;
-    }
-    public abstract class PayloadWrapper<T> where T : PayloadData
-    {
-        public readonly PayloadData data { public get; }
-        public abstract PayloadWrapper<T>(T data);
-        public abstract PayloadWrapper<T>(Payload payload);
-    }
-
-    public class Movement : PayloadData
-    {
-        public Vector2 Horizontal;
-        public Vector2 Rotation;
-        public bool Jump;
-        public bool Crouch;
-        public bool Sprint;
-    }
-    public class MovementPayload : PayloadWrapper<Movement>
-    {
-        
+        public Payload payload;
     }
 }

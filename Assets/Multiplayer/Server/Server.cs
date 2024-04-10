@@ -5,10 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading.Tasks;
 using UnityEngine;
 using System.Linq;
-using UnityEditor;
 
 namespace Core.Multiplayer
 {
@@ -115,9 +113,8 @@ namespace Core.Multiplayer
             {
                 byte[] stream = new byte[DATALENGTH];
                 int count = s.Receive(stream);
-                Payload p = new(stream, count);
-                p.DecodeText(out var msg);
-                Debug.Log("Client message: " + msg);
+                TextMessage msg = new(new Payload(stream, count));
+                Debug.Log("Client message: " + msg.Message.ToString());
             }
         }
 

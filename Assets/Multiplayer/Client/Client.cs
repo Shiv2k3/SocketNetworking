@@ -2,12 +2,10 @@ using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
 using System.Threading.Tasks;
-using System.Text;
 using Core.Multiplayer.Data;
 
 namespace Core.Multiplayer
 {
-    [System.Serializable]
     public class Client
     {
         public const int MSGSIZE = Server.DATALENGTH;
@@ -42,8 +40,8 @@ namespace Core.Multiplayer
 
         public async Task SendMessage(string msg)
         {
-            Payload p = new(Payload.DataType.Text, Encoding.UTF8.GetBytes(msg));
-            await Socket.SendAsync(p.Stream, SocketFlags.None);
+            TextMessage message = new(msg);
+            await Socket.SendAsync(message.payload.Stream, SocketFlags.None);
         }
 
         public void DisconnectFromServer()
