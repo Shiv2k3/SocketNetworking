@@ -107,22 +107,42 @@ namespace Core.Multiplayer
             _tick = ++_tick % _tickRate;
         }
 
+        byte[] streamHead;
         private void CheckMessage(Socket s)
         {
-            if (s.Available > 0)
+            if (streamHead != null)
             {
-                byte[] stream = new byte[DATALENGTH];
-                int count = s.Receive(stream);
-                Payload payload = new Payload(stream, count);
-                int expected = payload.Length + Payload.HEADERLENGTH;
+                // complete previous reading session
+            }
+
+            if (s.Available >= Payload.HEADERLENGTH)
+            {
+                streamHead = new byte[Payload.HEADERLENGTH];
+                int count = s.Receive(streamHead);
+                Payload header = new Payload(streamHead, count);
+
+                if(s.Available == header.Length)
+                {
+                    // get the rest of the data
+
+                    // reset head
+                    streamHead = null;
+                }
+                else
+                {
+                    return;
+                }
+
+                // Check if all data has been received
+                int expected = header.Length + Payload.HEADERLENGTH;
                 if (count != expected)
                 {
                     byte[] stream2 = new byte[expected];
-                    Array.Copy(stream, stream2, count);
+                    Array.Copy(streamHead, stream2, count);
                     s.Receive(stream2, count, expected - count, SocketFlags.None);
                 }
 
-                TextMessage msg = new(payload);
+                TextMessage msg = new(header);
                 Debug.Log("Client message: " + msg.Message);
             }
         }
