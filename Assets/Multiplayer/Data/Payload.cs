@@ -2,7 +2,7 @@
 
 namespace Core.Multiplayer.Data
 {
-    public readonly unsafe struct Payload
+    public struct Payload
     {
         public const int HEADERLENGTH = 3;
         public const int MAXDATALENGTH = int.MaxValue >> 16;
@@ -47,7 +47,7 @@ namespace Core.Multiplayer.Data
         /// <summary>
         /// The payload
         /// <summary>
-        public readonly byte[] Data;
+        public byte[] Data { get; private set; }
 
         /// <summary>
         /// Creates payload from data
@@ -99,7 +99,11 @@ namespace Core.Multiplayer.Data
             // Extract stream
             Stream = new byte[stream.Length];
             Array.Copy(stream, Stream, stream.Length);
-            Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
+
+            if (stream.Length > HEADERLENGTH)
+                Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
+            else
+                Data = null;
         }
         /// <summary>
         /// Extracts payload from stream using count
@@ -112,6 +116,11 @@ namespace Core.Multiplayer.Data
             Stream = new byte[count];
             Array.Copy(stream, Stream, count);
             Data = new ArraySegment<byte>(Stream, HEADERLENGTH, count - HEADERLENGTH).ToArray();
+        }
+
+        public void UpdateData(byte[] data)
+        {
+            Data = data;
         }
     }
 

@@ -100,7 +100,7 @@ namespace Core.Multiplayer
             // Read messages
             foreach (var client in _clients)
             {
-                CheckMessage(client);
+                CheckSocket(client);
             }
 
             // Update timings
@@ -108,42 +108,67 @@ namespace Core.Multiplayer
         }
 
         byte[] streamHead;
-        private void CheckMessage(Socket s)
+        private void CheckSocket(Socket s)
         {
+            // Exit if nothing to read
+            if (s.Available < Payload.HEADERLENGTH)
+                return;
+
+            // Complete previous session
             if (streamHead != null)
             {
-                // complete previous reading session
+                Payload header = new Payload(streamHead);
+                byte[] data = new byte[header.Length];
+                s.Receive(data);
+                header.UpdateData(data);
+
+                // Reset header
+                streamHead = null;
             }
 
+            // Read new data
             if (s.Available >= Payload.HEADERLENGTH)
             {
+                // get header
                 streamHead = new byte[Payload.HEADERLENGTH];
                 int count = s.Receive(streamHead);
-                Payload header = new Payload(streamHead, count);
+                Payload header = new Payload(streamHead);
 
-                if(s.Available == header.Length)
+                // Get data if all of it is avaiable
+                if (s.Available >= header.Length)
                 {
                     // get the rest of the data
+                    byte[] data = new byte[header.Length];
+                    s.Receive(data);
+                    header.UpdateData(data);
 
-                    // reset head
+                    // Reset header
                     streamHead = null;
                 }
                 else
                 {
+                    // Get it next time
                     return;
                 }
 
-                // Check if all data has been received
-                int expected = header.Length + Payload.HEADERLENGTH;
-                if (count != expected)
+                // Execute message
+                switch (header.Type)
                 {
-                    byte[] stream2 = new byte[expected];
-                    Array.Copy(streamHead, stream2, count);
-                    s.Receive(stream2, count, expected - count, SocketFlags.None);
+                    case Payload.DataType.Time:
+                        Debug.LogError("Clients shouldn't send time messages");
+                        break;
+                    case Payload.DataType.Text:
+                        Debug.Log(new TextMessage(header).Message);
+                        break;
+                    case Payload.DataType.Input:
+                        Debug.Log(new PlayerInput(header).Horizontal);
+                        break;
+                    case Payload.DataType.Transform:
+                        Debug.LogError("Clients shouldn't send transfrom messages");
+                        break;
+                    default:
+                        break;
                 }
-
-                TextMessage msg = new(header);
-                Debug.Log("Client message: " + msg.Message);
             }
         }
 
@@ -162,8 +187,8 @@ namespace Core.Multiplayer
                 _clients.Add(clientSocket);
                 _listening = false;
 
-                //clientSocket.Send(new byte[2] { (byte)_tickRate, (byte)_tick }, 2, SocketFlags.None);
-                //Debug.Log("Time SENT");
+                await clientSocket.SendAsync(new byte[2] { (byte)_tickRate, (byte)_tick }, SocketFlags.None);
+                Debug.Log("Time SENT");
             }
             catch (ObjectDisposedException)
             {

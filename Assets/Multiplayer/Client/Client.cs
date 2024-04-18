@@ -29,15 +29,18 @@ namespace Core.Multiplayer
             await Socket.ConnectAsync(EndPoint);
             Debug.Log($"Server CONNECTED");
 
-            //Debug.Log($"Server SYNCING");
-            //Payload load = new(Payload.DataType.Time, new byte[2]);
-            //Socket.Receive(load.data, 2, SocketFlags.None);
-            //load.DecodeTime(out var tickRate, out var currentTick);
-            //Debug.Log("Tick rate: " + tickRate + ", current tick: " + currentTick);
+            Debug.Log($"Server SYNCING");
+            Payload load = new(Payload.DataType.Time, new byte[2]);
+            await Socket.ReceiveAsync(load.Data, SocketFlags.None);
+            TimeMessage tm = new(load);
+            Debug.Log("Tick rate: " + tm.TickRate + ", current tick: " + tm.CurrentTick);
 
-            //Debug.Log("Server SYNCED");
+            Debug.Log("Server SYNCED");
         }
-
+        public async Task SendMessage(Payload payload)
+        {
+            await Socket.SendAsync(payload.Stream, SocketFlags.None);
+        }
         public async Task SendMessage(string msg)
         {
             TextMessage message = new(msg);
