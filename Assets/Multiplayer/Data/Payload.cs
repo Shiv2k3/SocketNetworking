@@ -26,7 +26,12 @@ namespace Core.Multiplayer.Data
             /// <summary>
             /// Player transform
             /// </summary>
-            Transform
+            Transform,
+
+            /// <summary>
+            /// Final message
+            /// </summary>
+            Disconnect
         }
 
         /// <summary>

@@ -26,8 +26,9 @@ namespace Core.Multiplayer
         }
 
         [Button("Disconnect Server")]
-        private void Disconnect()
+        private async void Disconnect()
         {
+            await client.SendMessage(new Data.Payload(Data.Payload.DataType.Disconnect, new byte[0]));
             client.DisconnectFromServer();
         }
     }

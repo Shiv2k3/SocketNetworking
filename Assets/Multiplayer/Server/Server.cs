@@ -32,7 +32,6 @@ namespace Core.Multiplayer
         private IPEndPoint _endPoint;
         private Socket _listener;
         private List<Socket> _clients;
-        private Queue<Task> _tasks;
 
         [Button("Create")]
         private void CreateServer()
@@ -166,6 +165,10 @@ namespace Core.Multiplayer
                     case Payload.DataType.Transform:
                         Debug.LogError("Clients shouldn't send transfrom messages");
                         break;
+                    case Payload.DataType.Disconnect:
+                        _clients.Remove(s);
+                        Debug.LogWarning("Client DISCONNECTED");
+                        break;
                     default:
                         break;
                 }
@@ -209,8 +212,10 @@ namespace Core.Multiplayer
             Online = false;
             _tick = 0;
 
+            Payload dcMsg = new(Payload.DataType.Disconnect, new byte[0]);
             foreach (var clientSocket in _clients)
             {
+                clientSocket.Send(dcMsg.Stream);
                 clientSocket.Shutdown(SocketShutdown.Send);
                 clientSocket.Close();
             }

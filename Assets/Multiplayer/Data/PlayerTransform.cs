@@ -6,15 +6,17 @@ namespace Core.Multiplayer.Data
 {
     public class PlayerTransform : PayloadData
     {
+        public int TransformID { get; } = -1;
         public Vector3 Position { get; }
         public Vector3 Rotation { get; }
 
-        public PlayerTransform(Vector3 position, Vector3 rotation)
+        public PlayerTransform(int transformID, Vector3 position, Vector3 rotation)
         {
+            TransformID = transformID;
             Position = position;
             Rotation = rotation;
 
-            byte[] data = new byte[24];
+            byte[] data = new byte[25];
             for (int i = 0; i < 3; i++)
             {
                 var posBytes = BitConverter.GetBytes(position[i]);
@@ -25,7 +27,7 @@ namespace Core.Multiplayer.Data
                     data[i * posBytes.Length + b + 12] = rotByte[b];
                 }
             }
-
+            data[24] = (byte)TransformID;
 
             payload = new(Payload.DataType.Transform, data);
         }

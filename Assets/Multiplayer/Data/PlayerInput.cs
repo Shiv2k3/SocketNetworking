@@ -4,6 +4,7 @@ using UnityEngine.Assertions;
 
 namespace Core.Multiplayer.Data
 {
+    [System.Serializable]
     public class PlayerInput : PayloadData
     {
         public Vector2 Horizontal;
