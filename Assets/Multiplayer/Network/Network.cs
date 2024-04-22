@@ -1,5 +1,5 @@
-﻿using Core.Util;
-using System;
+﻿using Core.Multiplayer.Data;
+using Core.Util;
 using System.Collections.Generic;
 
 namespace Core.Multiplayer
@@ -9,23 +9,10 @@ namespace Core.Multiplayer
     /// </summary>
     public class Network : Singleton<Network>
     {
-        private class Transmission
-        {
-            public uint EntityID;
-            public uint ModuleIndex;
-            public byte[] Data;
-
-            public Transmission(uint entityID, uint moduleIndex, byte[] data)
-            {
-                EntityID = entityID;
-                ModuleIndex = moduleIndex;
-                Data = data ?? throw new ArgumentNullException(nameof(data));
-            }
-        }
-        private Queue<Transmission> Transmissions = new();
+        private readonly Queue<Payload> Transmissions = new();
         public void QueueTransmission(NetworkEntity destination, NetworkModule module, in byte[] data)
         {
-            Transmission trms = new Transmission(destination.ID, module.Index, data);
+            Payload trms = new(destination.ID, module.Index, data);
             Transmissions.Enqueue(trms);
         }
         private void Update()

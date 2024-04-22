@@ -9,7 +9,7 @@
         /// Creates a new network module
         /// </summary>
         /// <param name="index">The index of this module in the list</param>
-        protected NetworkModule(uint index)
+        protected NetworkModule(byte index)
         {
             Index = index;
         }
@@ -17,16 +17,19 @@
         /// <summary>
         /// The index of this module in list
         /// </summary>
-        public uint Index { get; }
+        public byte Index { get; }
+
         /// <summary>
         /// Accepts incoming data
         /// </summary>
         /// <param name="data">The data designated for this module</param>
         public abstract void InData(in byte[] data);
+
         /// <summary>
         /// Execute behaviour
         /// </summary>
         public abstract void Modulate();
+
         /// <summary>
         /// Outputs data
         /// </summary>

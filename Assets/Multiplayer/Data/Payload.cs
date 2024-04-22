@@ -4,133 +4,65 @@ namespace Core.Multiplayer.Data
 {
     public struct Payload
     {
-        public const int HEADERLENGTH = 3;
-        public const int MAXDATALENGTH = int.MaxValue >> 16;
-        public enum DataType
-        {
-            /// <summary>
-            /// Server time
-            /// </summary>
-            Time,
-
-            /// <summary>
-            /// Text message
-            /// </summary>
-            Text,
-
-            /// <summary>
-            /// Player input
-            /// </summary>
-            Input,
-
-            /// <summary>
-            /// Player transform
-            /// </summary>
-            Transform,
-
-            /// <summary>
-            /// Final message
-            /// </summary>
-            Disconnect
-        }
-
         /// <summary>
-        /// Repersents <see cref="Type"/> of data
+        /// The number of header bytes, 2b EntityID + 1b ModuleIndex + 2b Length
         /// </summary>
-        public readonly DataType Type { get => (DataType)Stream[0]; }
-
+        public const int HEADERSIZE = 5;
         /// <summary>
-        /// The length of the data
+        /// Maximum number of transmission bytes allowed
         /// </summary>
-        public readonly int Length { get => Stream[1] | (Stream[2] << 8); }
+        public const int MAXBYTES = ushort.MaxValue;
 
         /// <summary>
-        /// The data stream
+        /// The ID of the entity
+        /// </summary>
+        public readonly ushort EntityID { get => (ushort)((Stream[0] << 8) | Stream[1]); }
+
+        /// <summary>
+        /// The module's index
+        /// </summary>
+        public readonly byte ModuleIndex { get => Stream[2]; }
+
+        /// <summary>
+        /// The number of data bytes
+        /// </summary>
+        public readonly ushort Length { get => (ushort)((Stream[3] << 8) | Stream[4]); }
+
+        /// <summary>
+        /// The data plus the header
         /// </summary>
         public readonly byte[] Stream;
 
         /// <summary>
-        /// The payload
+        /// The data without a header
         /// <summary>
-        public byte[] Data { get; private set; }
+        public ArraySegment<byte> Data { get; private set; }
 
-        /// <summary>
-        /// Creates payload from data
-        /// </summary>
-        /// <param name="type"> Type of data </param>
-        /// <param name="data"> The data </param>
-        public Payload(DataType type, byte[] data)
-        {
-            if (data.Length > MAXDATALENGTH)
-                throw new("Data is too large");
-
-            // create stream
-            Stream = new byte[data.Length + HEADERLENGTH];
-            Stream[0] = (byte)type;
-            Stream[1] = (byte)(data.Length & byte.MaxValue);
-            Stream[2] = (byte)(data.Length >> 8 & byte.MaxValue);
-
-            // populate data
-            Array.Copy(data, 0, Stream, HEADERLENGTH, data.Length);
-            Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
-        }
         /// <summary>
         /// Creates payload from data
         /// </summary>
-        /// <param name="type"> Type of data </param>
+        /// <param name="EntityID"> Type of data </param>
         /// <param name="data"> The data </param>
-        /// <param name="count"> Amount to copy </param>
-        public Payload(DataType type, byte[] data, int count)
+        public Payload(ushort EntityID, byte ModuleIndex, byte[] data)
         {
-            if (data.Length > MAXDATALENGTH)
+            if (data.Length > MAXBYTES)
                 throw new("Data is too large");
 
             // create stream
-            Stream = new byte[count + HEADERLENGTH];
-            Stream[0] = (byte)type;
-            Stream[1] = (byte)(count & byte.MaxValue);
-            Stream[2] = (byte)(count & (byte.MaxValue << 8));
+            Stream = new byte[data.Length + HEADERSIZE];
+
+            // Setup header
+            Stream[0] = (byte)(EntityID << 8 & ushort.MaxValue << 8);
+            Stream[1] = (byte)(EntityID & ushort.MaxValue >> 8);
+
+            Stream[2] = ModuleIndex;
+
+            Stream[3] = (byte)(data.Length << 8 & ushort.MaxValue << 8);
+            Stream[4] = (byte)(data.Length & ushort.MaxValue >> 8);
 
             // populate data
-            Array.Copy(data, 0, Stream, HEADERLENGTH, count);
-            Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
+            Array.Copy(data, 0, Stream, HEADERSIZE, data.Length);
+            Data = new ArraySegment<byte>(Stream, HEADERSIZE, Stream.Length - HEADERSIZE);
         }
-
-        /// <summary>
-        /// Extracts payload from stream
-        /// <summary>
-        public Payload(byte[] stream)
-        {
-            // Extract stream
-            Stream = new byte[stream.Length];
-            Array.Copy(stream, Stream, stream.Length);
-
-            if (stream.Length > HEADERLENGTH)
-                Data = new ArraySegment<byte>(Stream, HEADERLENGTH, Stream.Length - HEADERLENGTH).ToArray();
-            else
-                Data = null;
-        }
-        /// <summary>
-        /// Extracts payload from stream using count
-        /// </summary>
-        /// <param name="stream">the payload stream</param>
-        /// <param name="count">number of bytes to use</param>
-        public Payload(byte[] stream, int count)
-        {
-            // Extract stream
-            Stream = new byte[count];
-            Array.Copy(stream, Stream, count);
-            Data = new ArraySegment<byte>(Stream, HEADERLENGTH, count - HEADERLENGTH).ToArray();
-        }
-
-        public void UpdateData(byte[] data)
-        {
-            Data = data;
-        }
-    }
-
-    public class PayloadData
-    {
-        public Payload payload;
     }
 }

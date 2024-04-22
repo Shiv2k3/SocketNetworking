@@ -10,8 +10,8 @@ namespace Core.Multiplayer
     {
         private List<NetworkModule> Modules = new();
 
-        public uint ID { get; private set; }
+        public ushort ID { get; private set; }
 
-        public void InitEntity(in uint EntityID) => ID = EntityID;
+        public void InitEntity(in ushort EntityID) => ID = EntityID;
     }
 }
