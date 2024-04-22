@@ -30,10 +30,7 @@
         /// </summary>
         public abstract void Modulate();
 
-        /// <summary>
-        /// Outputs data
-        /// </summary>
-        /// <param name="data">The data to be sent over to the wire</param>
-        public abstract void OutData(out byte[] data);
+        /// <returns>The data to be sent over to the wire</returns>
+        public abstract byte[] OutData();
     }
 }
