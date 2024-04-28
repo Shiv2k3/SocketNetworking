@@ -1,2 +1,2 @@
-A simple TCP socket based server-client network in C# and Unity.
-Data transmission is being worked on.
+A simple p2p networked component system.
+Each client has a Network object which receives/sends transmissions for gameobject components called NetworkedModules.
