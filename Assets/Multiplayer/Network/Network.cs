@@ -103,7 +103,7 @@ namespace Core.Multiplayer
             }
         }
 
-        private readonly Dictionary<int, NetworkEntity> EntityMap = new();
+        private readonly Dictionary<ushort, NetworkEntity> EntityMap = new();
         private readonly Queue<ModuleTransmission> ModuleTransmissions = new();
         private void DistrubuteTransmissions()
         {
@@ -124,7 +124,10 @@ namespace Core.Multiplayer
                 switch (cmd.MCommand)
                 {
                     case CommandTransmission.Command.Create:
-                        EntityMap.Add(EntityMap.Count, Instantiate(EntityPrefabs[cmd.Index], transform));
+                        var entity = Instantiate(EntityPrefabs[cmd.Index], transform);
+                        ushort id = (ushort)EntityMap.Count;
+                        entity.InitEntity(id);
+                        EntityMap.Add(id, entity);
                         break;
                     case CommandTransmission.Command.Destroy:
                         Destroy(EntityMap[cmd.Index].gameObject);
