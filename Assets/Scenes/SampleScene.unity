@@ -169,6 +169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ScenePersistent: 0
   PrintTrace: 0
+  EntityPrefabs: []
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

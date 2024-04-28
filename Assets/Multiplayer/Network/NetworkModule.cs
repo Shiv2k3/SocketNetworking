@@ -1,4 +1,6 @@
-﻿namespace Core.Multiplayer
+﻿using System.Collections.Generic;
+
+namespace Core.Multiplayer
 {
     /// <summary>
     /// Repersents a single networked behaviour
@@ -6,31 +8,56 @@
     public abstract class NetworkModule
     {
         /// <summary>
-        /// Creates a new network module
+        /// Queue with incoming data
         /// </summary>
-        /// <param name="index">The index of this module in the list</param>
-        protected NetworkModule(byte index)
-        {
-            Index = index;
-        }
-
-        /// <summary>
-        /// The index of this module in list
-        /// </summary>
-        public byte Index { get; }
+        protected readonly Queue<byte[]> Incoming = new();
 
         /// <summary>
         /// Accepts incoming data
         /// </summary>
         /// <param name="data">The data designated for this module</param>
-        public abstract void InData(in byte[] data);
+        public void InData(in byte[] data)
+        {
+            Incoming.Enqueue(data);
+        }
 
         /// <summary>
-        /// Execute behaviour
+        /// Queue with outoging data
         /// </summary>
-        public abstract void Modulate();
+        protected readonly Queue<byte[]> Outgoing = new();
 
-        /// <returns>The data to be sent over to the wire</returns>
-        public abstract byte[] OutData();
+        /// <summary>
+        /// The outgoing data
+        /// </summary>
+        public byte[] OutData()
+        {
+            return Outgoing.Dequeue();
+        }
+
+        /// <summary>
+        /// Execute module behaviour
+        /// </summary>
+        public void Modulate()
+        {
+            if (Network.I.IsHost)
+            {
+                ServerrModulate();
+                ClientModulate();
+            }
+            else
+            {
+                ClientModulate();
+            }
+        }
+
+        /// <summary>
+        /// Execute server side behaviour
+        /// </summary>
+        protected abstract void ServerrModulate();
+
+        /// <summary>
+        /// Execute client side behaviour
+        /// </summary>
+        protected abstract void ClientModulate();
     }
 }

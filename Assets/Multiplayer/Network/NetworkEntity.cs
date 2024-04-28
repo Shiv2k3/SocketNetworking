@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Core.Multiplayer.DataTransmission;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Core.Multiplayer
@@ -11,7 +12,7 @@ namespace Core.Multiplayer
         public ushort ID { get; private set; }
         public void InitEntity(in ushort EntityID) => ID = EntityID;
 
-        private List<NetworkModule> Modules = new();
+        private readonly List<NetworkModule> Modules = new();
         public void UploadData(byte moduleInex, byte[] data) => Modules[moduleInex].InData(data);
 
         [SerializeField] private int TickRate = 64;
@@ -23,9 +24,10 @@ namespace Core.Multiplayer
         private void Tick()
         {
             // Enqueue output data from modules into network queue
-            foreach (var module in Modules)
+            for (byte i = 0; i < Modules.Count; i++)
             {
-                Network.I.EnqueueTransmission(ID, module.Index, module.OutData());
+                NetworkModule module = Modules[i];
+                Network.I.EnqueueTransmission(new ModuleTransmission(ID, i, module.OutData()));
             }
         }
 
