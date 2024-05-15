@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Core.Util;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -13,8 +14,12 @@ namespace Core.Multiplayer.DataTransmission
         /// <summary>
         /// Map of Transmission type to index
         /// </summary>
-        private readonly Dictionary<Type, int> TransmissionMap = Assembly.GetAssembly(typeof(Transmission)).GetTypes().Where(x => x.IsClass && x.BaseType == typeof(Transmission) && !x.IsAbstract)
+        private static readonly Dictionary<Type, int> TransmissionMap;
+        static Transmission()
+        {
+            TransmissionMap = Assembly.GetAssembly(typeof(Transmission)).GetTypes().Where(x => x.IsClass && x.BaseType == typeof(Transmission) && !x.IsAbstract)
             .Select((value, index) => new { Key = index, Value = value }).ToDictionary(pair => pair.Value, pair => pair.Key);
+        }
 
         /// <summary>
         /// The number of header bytes, 2b TypeID + 2b Length
@@ -39,31 +44,13 @@ namespace Core.Multiplayer.DataTransmission
         /// <summary>
         /// Transmission type identifier
         /// </summary>
-        public ushort TypeID { get => GetUshort(0, 1); protected set => SetUshort(value, 0, 1); }
+        public ushort TypeID { get => OL.GetUshort(0, 1, Stream); protected set => OL.SetUshort(value, 0, 1, Stream); }
 
         /// <summary>
-        /// The number of bytes in data
+        /// The number of bytes of data
         /// </summary>
-        public ushort Length { get => GetUshort(2, 3); protected set => SetUshort(value, 2, 3); }
+        public ushort Length { get => OL.GetUshort(2, 3, Stream); protected set => OL.SetUshort(value, 2, 3, Stream); }
 
-        /// <summary>
-        /// Sets the bytes from ushort into Stream at index i1 & i2
-        /// </summary>
-        /// <param name="value">The value to set in Stream</param>
-        private void SetUshort(ushort value, int i1, int i2)
-        {
-            Stream[i1] = (byte)(value >> 8);
-            Stream[i2] = (byte)value;
-        }
-
-        /// <summary>
-        /// Gets ushort from Stream by using bytes at index i1 & i2
-        /// </summary>
-        /// <returns></returns>
-        private ushort GetUshort(int i1, int i2)
-        {
-            return (ushort)(Stream[i1] << 8 | Stream[i2]);
-        }
         /// <summary>
         /// Create base class members
         /// </summary>
@@ -84,16 +71,28 @@ namespace Core.Multiplayer.DataTransmission
         public Transmission(byte[] header)
         {
             Stream = header;
-            Data = new(Stream, HEADERSIZE, Length);
         }
         public Transmission(byte[] header, byte[] data)
         {
-            Stream = header.Concat(data).ToArray();
+            if (header.Length != HEADERSIZE) throw new($"Incorrect header length: {header.Length}");
+
+            Stream = new byte[HEADERSIZE + data.Length];
+            for (int i = 0; i < Stream.Length; i++)
+            {
+                Stream[i] = i < HEADERSIZE ? header[i] : data[i - HEADERSIZE];
+            }
             Data = new(Stream, HEADERSIZE, data.Length);
         }
+
+        public Transmission(Transmission trms)
+        {
+            Stream = trms.Stream;
+            Data = trms.Data;
+        }
+
         /// <summary>
         /// The final payload
         /// </summary>
-        public byte[] Payload => Stream;
+        public byte[] Payload { get => Stream; }
     }
 }

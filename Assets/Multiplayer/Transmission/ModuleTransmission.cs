@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Core.Util;
+using System;
+using System.Security.Cryptography;
 
 namespace Core.Multiplayer.DataTransmission
 {
@@ -7,43 +9,55 @@ namespace Core.Multiplayer.DataTransmission
     /// </summary>
     public class ModuleTransmission : Transmission
     {
-        // 2B entityID + 1B index
-        private new const int HEADERSIZE = 3;
+        // 2B ID
+        private new const int HEADERSIZE = 2;
 
         /// <summary>
-        /// The ID of the parent entity
+        /// The ID module
         /// </summary>
-        public ushort EntityID { get => (ushort)((Data[0] << 8) | Data[1]); }
+        public ushort ModuleID { get => OL.GetUshort(0, 1, Stream); set => OL.SetUshort(value, 0, 1, Stream); }
 
         /// <summary>
-        /// The module's index in the parent list
+        /// Module stream
         /// </summary>
-        public byte ModuleIndex { get => Data[2]; }
+        private readonly ArraySegment<byte> Stream;
 
         /// <summary>
-        /// Module data
+        /// Actual module data
         /// </summary>
         public new readonly ArraySegment<byte> Data;
 
         /// <summary>
         /// Constructs tranmission for data
         /// </summary>
-        /// <param name="EntityID">Module's parent entityID</param>
-        /// <param name="ModuleIndex">Module index in parent's modules list</param>
+        /// <param name="ID">Module's ID</param>
         /// <param name="data">The data being transmitted</param>
-        public ModuleTransmission(ushort EntityID, byte ModuleIndex, byte[] data) : base(typeof(ModuleTransmission), (ushort)(data.Length + HEADERSIZE))
+        public ModuleTransmission(ushort ID, ArraySegment<byte> data) : base(typeof(ModuleTransmission), (ushort)(data.Count + HEADERSIZE))
         {
-            if (data.Length + HEADERSIZE > MAXBYTES)
+            if (data.Count + HEADERSIZE > MAXBYTES)
                 throw new("Data is too large");
 
-            // Setup header
-            base.Data[0] = (byte)(EntityID << 8 & ushort.MaxValue << 8);
-            base.Data[1] = (byte)(EntityID & ushort.MaxValue >> 8);
-            base.Data[2] = ModuleIndex;
+            // Setup containers
+            Stream = base.Data;
+            Data = Stream.Slice(HEADERSIZE);
 
-            // Set data
-            Data = base.Data.Slice(HEADERSIZE);
-            data.CopyTo(Data.AsSpan());
+            // Setup data
+            ModuleID = ID;
+            for (int i = 0; i < data.Count; i++)
+            {
+                Data[i] = data[i];
+            }
         }
+
+        /// <summary>
+        /// Constructs module transmission using transmission
+        /// </summary>
+        /// <param name="trms">The base transmission</param>
+        public ModuleTransmission(Transmission trms) : base(trms)
+        {
+            Stream = base.Data;
+            Data = Stream.Slice(HEADERSIZE);
+        }
+        
     }
 }

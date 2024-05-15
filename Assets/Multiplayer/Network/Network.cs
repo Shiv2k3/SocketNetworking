@@ -1,5 +1,6 @@
 ﻿using Core.Multiplayer.DataTransmission;
 using Core.Util;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -11,133 +12,222 @@ namespace Core.Multiplayer
     /// <summary>
     /// Responsible for sending data and distributing received data to designated network entities
     /// </summary>
-    public class Network : Singleton<Network>
+    public partial class Network : Singleton<Network>
     {
-        private readonly Socket socket = new(SocketType.Dgram, ProtocolType.Udp);
         public bool IsHost { get; private set; }
-        public void Connect(IPAddress ip, ushort port, bool isHost)
+        public bool Online { get; private set; }
+
+        private NetworkClient Host = null;
+        private List<NetworkClient> Interfaces = null;
+        private Queue<ModuleTransmission> ModuleTransmissions = null;
+
+        private Dictionary<ushort, NetworkedModule> ModulesMap = null;
+
+        /// <summary>
+        /// Starts the host network
+        /// </summary>
+        public IPAddress StartNetwork()
         {
-            socket.Connect(ip, port);
-            IsHost = isHost;
+            if (Online) throw new("Network is already ONLINE");
+
+            Initalize();
+
+            IPEndPoint lep = new(IPAddress.Loopback, 6969);
+            Socket listener = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            listener.Bind(lep);
+            listener.Listen(10);
+
+            Host = new(listener);
+
+            IsHost = true;
+            Online = true;
+            Debug.Log("Host Network STARTED");
+            return lep.Address;
         }
 
+        /// <summary>
+        /// Starts the client network
+        /// </summary>
+        /// <param name="hostAddress">The address of the host</param>
+        public async void StartNetwork(IPAddress hostAddress)
+        {
+            if (Online) throw new("Network is already ONLINE");
+
+            Initalize();
+
+            IPEndPoint rep = new(hostAddress, 6969);
+            Socket host = new(rep.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            await host.ConnectAsync(rep);
+
+            Host = new(host);
+            Interfaces.Add(Host);
+
+            IsHost = false;
+            Online = true;
+            Debug.Log("Client Network STARTED");
+        }
+
+        private void Initalize()
+        {
+            Interfaces = new();
+            ModuleTransmissions = new();
+            ModulesMap = new();
+            MapAllModules();
+
+            void MapAllModules()
+            {
+                var allMods = FindObjectsOfType<NetworkedModule>();
+                foreach (var module in allMods)
+                {
+                    ushort ID = (ushort)ModulesMap.Count;
+                    ModulesMap.Add(ID, module);
+                    module.OnStart(ID);
+                }
+            }
+
+        }
+        private void Deinitalize()
+        {
+            foreach (var client in Interfaces)
+            {
+                client.Disconnect();
+            }
+            Interfaces = null;
+
+            foreach (var module in ModulesMap)
+            {
+                module.Value.OnServerClosed();
+            }
+            ModulesMap = null;
+
+            ModuleTransmissions = null;
+            NetworkClient.Broadcasts.Clear();
+        }
+
+        public async void Disconnect()
+        {
+            Host.Disconnect();
+            IsHost = false;
+            Online = false;
+
+            await Task.Yield();
+
+            Deinitalize();
+
+            Debug.Log("Network OFFLINE");
+        }
         private async void Update()
         {
             // guard !connected
-            if (!socket.Connected) return;
+            if (!Online) return;
 
             // Receive transmission
             await ReceiveTransmissions();
-            // Sort transmissions
-            SortTransmissions();
+
             // Distribute the received module transmissions
             DistrubuteTransmissions();
-            // Execute the received command transmissions
-            ExecuteCommands();
-            // Send queued data
-            await SendTransmissions();
+
+            // Send brocast data
+            await SendBroadcast();
+
+            // Accept new connections
+            if (IsHost) await AcceptRequests();
         }
 
-        private readonly Queue<Transmission> OutTransmissions = new();
-        public void EnqueueTransmission(Transmission trms) => OutTransmissions.Enqueue(trms);
-        private async Task SendTransmissions()
+        private bool _listening;
+        /// <summary>
+        /// Tries to establish new connections
+        /// </summary>
+        private async Task AcceptRequests()
         {
-            while (OutTransmissions.Count != 0)
+            if (_listening) return;
+
+            try
             {
-                var trms = OutTransmissions.Dequeue();
-                await socket.SendAsync(trms.Payload, SocketFlags.None);
+                _listening = true;
+                Socket clientSocket = await Host.Socket.AcceptAsync();
+                Debug.Log("Client CONNECTED");
+                Interfaces.Add(new(clientSocket));
+                _listening = false;
             }
+            catch (ObjectDisposedException)
+            {
+                _listening = false;
+            }
+            catch (Exception e) { throw e; }
         }
 
-        private readonly Queue<Transmission> InTransmissions = new();
-        private Transmission incomingTrms;
-        private async Task ReceiveTransmissions()
+        public void EnqueueBroadcast(Transmission trms) => NetworkClient.Broadcasts.Enqueue(trms);
+        private async Task SendBroadcast()
         {
-            if (socket.Available <= Transmission.HEADERSIZE)
-                return;
-
-            // Complete previous transmission
-            if (incomingTrms != null && socket.Available >= incomingTrms.Length)
+            while (NetworkClient.Broadcasts.Count != 0)
             {
-                await CompleteTransmission();
-            }
-
-            if (socket.Available <= Transmission.HEADERSIZE)
-                return;
-
-            // Get header of incoming transmission
-            byte[] temp = new byte[Transmission.HEADERSIZE];
-            await socket.ReceiveAsync(temp, SocketFlags.None);
-            incomingTrms = new(temp);
-            if (socket.Available >= incomingTrms.Length)
-            {
-                await CompleteTransmission();
-            }
-
-            async Task CompleteTransmission()
-            {
-                byte[] data = new byte[incomingTrms.Length];
-                await socket.ReceiveAsync(data, SocketFlags.None);
-                incomingTrms = new(incomingTrms.Payload, data);
-                InTransmissions.Enqueue(incomingTrms);
-                incomingTrms = null;
-            }
-        }
-
-        private void SortTransmissions()
-        {
-            while (InTransmissions.Count != 0)
-            {
-                var trms = InTransmissions.Dequeue();
-                switch (trms)
+                var trms = NetworkClient.Broadcasts.Dequeue();
+                for (int clientID = 0; clientID < Interfaces.Count; clientID++)
                 {
-                    case ModuleTransmission:
-                        ModuleTransmissions.Enqueue(trms as ModuleTransmission);
-                        break;
-                    case CommandTransmission:
-                        Commands.Enqueue(trms as CommandTransmission);
-                        break;
-                    default:
-                        throw new("Unknown transmission type");
+                    try
+                    {
+                        await Interfaces[clientID].Send(trms.Payload);
+
+                    }
+                    catch (SocketException se)
+                    {
+                        if (se.SocketErrorCode == SocketError.HostDown)
+                        {
+                            Debug.LogWarning("Endpoint CLOSED");
+                            Disconnect();
+                            return;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        throw e;
+                    }
                 }
             }
         }
 
-        private readonly Dictionary<ushort, NetworkEntity> EntityMap = new();
-        private readonly Queue<ModuleTransmission> ModuleTransmissions = new();
+        bool _receiving;
+        /// <summary>
+        /// Represents incoming transmissions
+        /// </summary>
+        private async Task ReceiveTransmissions()
+        {
+            if (_receiving) return;
+            _receiving = true;
+
+            foreach (var i in Interfaces)
+            {
+                var trms = await i.TryGetTransmission();
+                
+                // Cancel if disconnected
+                if (!Online)
+                {
+                    _receiving = false;
+                    return;
+                }
+
+                if (trms != null)
+                    ModuleTransmissions.Enqueue(new(trms));
+            }
+            _receiving = false;
+        }
+
         private void DistrubuteTransmissions()
         {
             while (ModuleTransmissions.Count != 0)
             {
                 var mTrms = ModuleTransmissions.Dequeue();
-                EntityMap[mTrms.EntityID].UploadData(mTrms.ModuleIndex, mTrms.Data.ToArray());
+                ModulesMap[mTrms.ModuleID].UploadData(mTrms.Data);
             }
         }
 
-        private readonly Queue<CommandTransmission> Commands = new();
-        [SerializeField] private List<NetworkEntity> EntityPrefabs = new();
-        private void ExecuteCommands()
+        public ushort ReportModule(NetworkedModule networkedModule)
         {
-            while (Commands.Count != 0)
-            {
-                var cmd = Commands.Dequeue();
-                switch (cmd.MCommand)
-                {
-                    case CommandTransmission.Command.Create:
-                        var entity = Instantiate(EntityPrefabs[cmd.Index], transform);
-                        ushort id = (ushort)EntityMap.Count;
-                        entity.InitEntity(id);
-                        EntityMap.Add(id, entity);
-                        break;
-                    case CommandTransmission.Command.Destroy:
-                        Destroy(EntityMap[cmd.Index].gameObject);
-                        EntityMap.Remove(cmd.Index);
-                        break;
-                    default:
-                        break;
-                }
-            }
+            ushort id = (ushort)ModulesMap.Count;
+            ModulesMap.Add(id, networkedModule);
+            return id;
         }
-
     }
 }
