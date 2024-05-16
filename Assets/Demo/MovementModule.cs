@@ -20,7 +20,7 @@ namespace Demo
                 ArraySegment<byte> z = Incoming.Dequeue();
 
                 // Set position
-                transform.position = new Vector3(BitConverter.ToSingle(x), 0, BitConverter.ToSingle(z));
+                transform.position = new Vector3(BitConverter.ToSingle(x), transform.position.y, BitConverter.ToSingle(z));
             }
 
             // Send input data
