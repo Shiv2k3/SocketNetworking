@@ -284,8 +284,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1606442555}
-  - component: {fileID: 1606442556}
-  - component: {fileID: 1606442557}
   m_Layer: 0
   m_Name: Local Stuff
   m_TagString: Untagged
@@ -310,33 +308,6 @@ Transform:
   - {fileID: 1719150927}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1606442556
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1606442554}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01e202292e726cf468e0b4e5fad39f0f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  serverIp: fe80::af02:d2dc:63e7:98f4
---- !u!114 &1606442557
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1606442554}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: adea9456d0f86c044b2feb82b1b81dd8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  TickRate: 64
-  msg: NONE
 --- !u!1 &1719150925
 GameObject:
   m_ObjectHideFlags: 0
