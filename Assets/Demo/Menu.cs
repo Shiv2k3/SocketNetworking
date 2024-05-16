@@ -17,7 +17,9 @@ namespace Demo
         [Button("Join Server")]
         void JoinServer()
         {
-            Core.Multiplayer.Network.I.StartNetwork(IPAddress.Parse(serverIp));
+            var ip = Dns.GetHostAddresses(Dns.GetHostName())[0];
+            serverIp = ip.ToString();
+            Core.Multiplayer.Network.I.StartNetwork(ip);
         }
 
         [Button("Disconnect")]

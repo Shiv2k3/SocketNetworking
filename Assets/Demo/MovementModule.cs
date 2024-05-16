@@ -6,8 +6,11 @@ namespace Demo
 {
     public class MovementModule : NetworkedModule
     {
-        public float speed;
-        public byte input;
+        public float speed = 1f;
+
+        private byte input;
+        private Vector2 inputV;
+
         protected override void ClientModulate()
         {
             if (Incoming.Count >= 2)
@@ -28,10 +31,14 @@ namespace Demo
             k |= (byte)(Input.GetKey(KeyCode.D) ? 8 : 0);
 
             // enq input
-            byte[] d = new byte[] { input = k };
-            Outgoing.Enqueue(d);
+            byte[] d = new byte[] { k };
+            if (k != input)
+            {
+                Outgoing.Enqueue(d);
+                input = k;
+            }
         }
-        public Vector2 ve;
+
         protected override void ServerModulate()
         {
             if (Incoming.Count >= 1)
@@ -39,24 +46,28 @@ namespace Demo
                 // de-q incoming
                 ArraySegment<byte> data = Incoming.Dequeue();
                 
-                byte wasdInput = this.input = data[0];
-                int w = wasdInput & 1;
-                int a = wasdInput & 2;
-                int s = wasdInput & 4;
-                int d = wasdInput & 8;
-                Vector2 input = new(w - s, d - a);
+                // Get input
+                input = data[0];
+                int w = input & 1;
+                int a = input & 2;
+                int s = input & 4;
+                int d = input & 8;
+                inputV = new(w - s, d - a);
+            }
 
-                // do stuff
-                Vector2 v = ve = speed * Time.deltaTime * input;
+            // Send position if it will change
+            Vector2 v = speed * Time.deltaTime * inputV;
+            if (v != Vector2.zero)
+            {
+                // en-q outgoing
+                ArraySegment<byte> x = BitConverter.GetBytes(transform.position.x);
+                ArraySegment<byte> z = BitConverter.GetBytes(transform.position.z);
+                Outgoing.Enqueue(x);
+                Outgoing.Enqueue(z);
+
                 transform.position += new Vector3(v.x, 0, v.y);
             }
 
-            // en-q outgoing
-            ArraySegment<byte> x = BitConverter.GetBytes(transform.position.x);
-            ArraySegment<byte> z = BitConverter.GetBytes(transform.position.z);
-
-            Outgoing.Enqueue(x);
-            Outgoing.Enqueue(z);
         }
     }
 

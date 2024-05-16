@@ -32,8 +32,10 @@ namespace Core.Multiplayer
 
             Initalize();
 
-            IPEndPoint lep = new(IPAddress.Loopback, 6969);
-            Socket listener = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            IPEndPoint lep = new(Dns.GetHostAddresses(Dns.GetHostName())[0], 4567);
+            Socket listener = new(lep.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            listener.ReceiveBufferSize *= 10;
+            listener.SendBufferSize *= 10;
             listener.Bind(lep);
             listener.Listen(10);
 
@@ -55,8 +57,10 @@ namespace Core.Multiplayer
 
             Initalize();
 
-            IPEndPoint rep = new(hostAddress, 6969);
+            IPEndPoint rep = new(hostAddress, 4567);
             Socket host = new(rep.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            host.ReceiveBufferSize *= 10;
+            host.SendBufferSize *= 10;
 
             await host.ConnectAsync(rep);
 
@@ -159,8 +163,12 @@ namespace Core.Multiplayer
         }
 
         public void EnqueueBroadcast(Transmission trms) => NetworkClient.Broadcasts.Enqueue(trms);
+        bool _sending;
         private async Task SendBroadcast()
         {
+            if (_sending) return;
+            _sending = true;
+
             while (NetworkClient.Broadcasts.Count != 0)
             {
                 var trms = NetworkClient.Broadcasts.Dequeue();
@@ -186,6 +194,8 @@ namespace Core.Multiplayer
                     }
                 }
             }
+
+            _sending = false;
         }
 
         bool _receiving;

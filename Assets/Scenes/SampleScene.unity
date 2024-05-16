@@ -322,7 +322,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01e202292e726cf468e0b4e5fad39f0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverIp: 127.0.0.1
+  serverIp: fe80::af02:d2dc:63e7:98f4
 --- !u!114 &1606442557
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -332,12 +332,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1606442554}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 75da40829f1923d4c9ac2040f596c995, type: 3}
+  m_Script: {fileID: 11500000, guid: adea9456d0f86c044b2feb82b1b81dd8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   TickRate: 64
-  speed: 1
-  msg: Host
+  msg: NONE
 --- !u!1 &1719150925
 GameObject:
   m_ObjectHideFlags: 0
