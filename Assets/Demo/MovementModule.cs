@@ -59,13 +59,14 @@ namespace Demo
             Vector2 v = speed * Time.deltaTime * inputV;
             if (v != Vector2.zero)
             {
+                // Update pos
+                transform.position += new Vector3(v.x, 0, v.y);
+                
                 // en-q outgoing
                 ArraySegment<byte> x = BitConverter.GetBytes(transform.position.x);
                 ArraySegment<byte> z = BitConverter.GetBytes(transform.position.z);
                 Outgoing.Enqueue(x);
                 Outgoing.Enqueue(z);
-
-                transform.position += new Vector3(v.x, 0, v.y);
             }
 
         }

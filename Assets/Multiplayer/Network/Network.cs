@@ -34,8 +34,6 @@ namespace Core.Multiplayer
 
             IPEndPoint lep = new(Dns.GetHostAddresses(Dns.GetHostName())[0], 4567);
             Socket listener = new(lep.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            listener.ReceiveBufferSize *= 10;
-            listener.SendBufferSize *= 10;
             listener.Bind(lep);
             listener.Listen(10);
 
@@ -59,8 +57,6 @@ namespace Core.Multiplayer
 
             IPEndPoint rep = new(hostAddress, 4567);
             Socket host = new(rep.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            host.ReceiveBufferSize *= 10;
-            host.SendBufferSize *= 10;
 
             await host.ConnectAsync(rep);
 
