@@ -1,2 +1,1 @@
-A simple p2p networked component system.
-Each client has a Network object which receives/sends transmissions for gameobject components called NetworkedModules.
+A simple TCP socket based server-client network in C# and Unity, data transmission being worked on.
