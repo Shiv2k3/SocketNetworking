@@ -1,26 +1,13 @@
 ﻿using Core.Util;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 namespace Core.Multiplayer.DataTransmission
 {
     /// <summary>
     /// Repersents a base header-only transmission without any data transmission, inherieting classes should simply wrap over Data
     /// </summary>
-    public class Transmission
+    public partial class Transmission
     {
-        /// <summary>
-        /// Map of Transmission type to index
-        /// </summary>
-        private static readonly Dictionary<Type, int> TransmissionMap;
-        static Transmission()
-        {
-            TransmissionMap = Assembly.GetAssembly(typeof(Transmission)).GetTypes().Where(x => x.IsClass && x.BaseType == typeof(Transmission) && !x.IsAbstract)
-            .Select((value, index) => new { Key = index, Value = value }).ToDictionary(pair => pair.Value, pair => pair.Key);
-        }
-
         /// <summary>
         /// The number of header bytes, 2b TypeID + 2b Length
         /// </summary>
@@ -39,7 +26,7 @@ namespace Core.Multiplayer.DataTransmission
         /// <summary>
         /// Stream's data section
         /// </summary>
-        protected readonly ArraySegment<byte> Data;
+        protected readonly ArraySegment<byte> Body;
 
         /// <summary>
         /// Transmission type identifier
@@ -58,9 +45,9 @@ namespace Core.Multiplayer.DataTransmission
         protected Transmission(Type transmissionType, ushort dataLength)
         {
             Stream = new byte[dataLength + HEADERSIZE];
-            Data = new(Stream, HEADERSIZE, dataLength);
+            Body = new(Stream, HEADERSIZE, dataLength);
 
-            TypeID = (ushort)TransmissionMap[transmissionType];
+            TypeID = TransmissionIndex[transmissionType];
             Length = dataLength;
         }
 
@@ -81,13 +68,13 @@ namespace Core.Multiplayer.DataTransmission
             {
                 Stream[i] = i < HEADERSIZE ? header[i] : data[i - HEADERSIZE];
             }
-            Data = new(Stream, HEADERSIZE, data.Length);
+            Body = new(Stream, HEADERSIZE, data.Length);
         }
 
         public Transmission(Transmission trms)
         {
             Stream = trms.Stream;
-            Data = trms.Data;
+            Body = trms.Body;
         }
 
         /// <summary>
@@ -95,4 +82,5 @@ namespace Core.Multiplayer.DataTransmission
         /// </summary>
         public byte[] Payload { get => Stream; }
     }
+
 }
