@@ -2,8 +2,11 @@
 using Core.Util;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -23,51 +26,48 @@ namespace Core.Multiplayer
 
         private Dictionary<ushort, NetworkedModule> ModulesMap = null;
 
-        /// <summary>
-        /// Starts the host network
-        /// </summary>
-        public IPAddress StartNetwork()
+        public async Task<bool> HostLobby(string lobbyName, string lobbyPassword, bool visible, byte maxClients)
         {
-            if (Online) throw new("Network is already ONLINE");
+            if (Online)
+            {
+                Debug.LogError("Network is already ONLINE");
+                return false;
+            }
 
             Initalize();
 
-            IPEndPoint lep = new(Dns.GetHostAddresses(Dns.GetHostName())[0], 4567);
-            Socket listener = new(lep.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            listener.Bind(lep);
-            listener.Listen(10);
+            string ip = Environment.GetEnvironmentVariable("OPENLOBBYIP", EnvironmentVariableTarget.User);
+            int port = int.Parse(Environment.GetEnvironmentVariable("OPENLOBBYPORT", EnvironmentVariableTarget.User));
 
-            Host = new(listener);
+            Socket s = new(SocketType.Stream, ProtocolType.Tcp);
+            var serverIP = IPAddress.Parse(ip);
+            var rep = new IPEndPoint(serverIP, port);
+            await s.ConnectAsync(rep);
+            NetworkClient client = new(s);
 
-            IsHost = true;
-            Online = true;
-            Debug.Log("Host Network STARTED");
-            return lep.Address;
+            HostRequest req = new(lobbyName, lobbyPassword, visible, maxClients);
+            await client.Send(req.Payload);
+            var trms = await client.TryGetTransmission();
+            bool success = trms is not null && new Reply(trms).ReplyCode == Reply.Code.LobbyCreated;
+
+            if(success)
+            {
+                Debug.Log("Lobby was deployed successfully");
+                Online = true;
+                Host = client;
+                return true;
+            }
+            else
+            {
+                Debug.LogError("Lobby deployment unsuccessful");
+                client.Disconnect();
+                return false;
+            }
         }
-
-        /// <summary>
-        /// Starts the client network
-        /// </summary>
-        /// <param name="hostAddress">The address of the host</param>
-        public async void StartNetwork(IPAddress hostAddress)
+        public void JoinLobby()
         {
-            if (Online) throw new("Network is already ONLINE");
-
-            Initalize();
-
-            IPEndPoint rep = new(hostAddress, 4567);
-            Socket host = new(rep.Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-            await host.ConnectAsync(rep);
-
-            Host = new(host);
-            Interfaces.Add(Host);
-
-            IsHost = false;
-            Online = true;
-            Debug.Log("Client Network STARTED");
+            throw null;
         }
-
         private void Initalize()
         {
             Interfaces = new();
@@ -77,7 +77,8 @@ namespace Core.Multiplayer
 
             void MapAllModules()
             {
-                var allMods = FindObjectsOfType<NetworkedModule>();
+                var allMods = FindObjectsByType<NetworkedModule>(FindObjectsSortMode.None);
+                allMods.OrderBy(x => x.name.ToString());
                 foreach (var module in allMods)
                 {
                     ushort ID = (ushort)ModulesMap.Count;
@@ -122,14 +123,14 @@ namespace Core.Multiplayer
             // guard !connected
             if (!Online) return;
 
-            // Receive transmission
-            await ReceiveTransmissions();
+            // Send brocast data
+            await SendBroadcast();
 
             // Distribute the received module transmissions
             DistrubuteTransmissions();
 
-            // Send brocast data
-            await SendBroadcast();
+            // Receive transmission
+            await ReceiveTransmissions();
 
             // Accept new connections
             if (IsHost) await AcceptRequests();
@@ -170,24 +171,7 @@ namespace Core.Multiplayer
                 var trms = NetworkClient.Broadcasts.Dequeue();
                 for (int clientID = 0; clientID < Interfaces.Count; clientID++)
                 {
-                    try
-                    {
-                        await Interfaces[clientID].Send(trms.Payload);
-
-                    }
-                    catch (SocketException se)
-                    {
-                        if (se.SocketErrorCode == SocketError.HostDown)
-                        {
-                            Debug.LogWarning("Endpoint CLOSED");
-                            Disconnect();
-                            return;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw e;
-                    }
+                    await Interfaces[clientID].Send(trms.Payload);
                 }
             }
 

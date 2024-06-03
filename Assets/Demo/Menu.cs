@@ -1,25 +1,30 @@
 using Sirenix.OdinInspector;
-using System.Net;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Demo
 {
     public class Menu : MonoBehaviour
     {
-        [SerializeField, ReadOnly] private string serverIp = IPAddress.Loopback.ToString();
+        public TMP_InputField LobbyName;
+        public TMP_InputField LobbyPassword;
+        public TMP_InputField MaxPlayers;
+        public Toggle Public;
 
-        [Button("Host Server")]
-        void HostServer()
+        public Button HostButton;
+        public Button DisconnectButton;
+
+        private void Awake()
         {
-            serverIp = Core.Multiplayer.Network.I.StartNetwork().ToString();
+            HostButton.onClick.AddListener(HostLobby);
+            DisconnectButton.onClick.AddListener(Disconnect);
         }
 
-        [Button("Join Server")]
-        void JoinServer()
+        [Button("Host Lobby")]
+        async void HostLobby()
         {
-            var ip = Dns.GetHostAddresses(Dns.GetHostName())[0];
-            serverIp = ip.ToString();
-            Core.Multiplayer.Network.I.StartNetwork(ip);
+            await Core.Multiplayer.Network.I.HostLobby(LobbyName.text, LobbyPassword.text, Public.isOn, byte.Parse(MaxPlayers.text));
         }
 
         [Button("Disconnect")]

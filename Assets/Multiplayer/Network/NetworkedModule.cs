@@ -1,6 +1,7 @@
 ﻿using Core.Multiplayer.DataTransmission;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 namespace Core.Multiplayer
@@ -11,9 +12,12 @@ namespace Core.Multiplayer
     public abstract class NetworkedModule : MonoBehaviour
     {
         [SerializeField] private int TickRate = 64;
+        protected float deltaTick;
+        private float lastTick;
         public void OnStart(ushort id)
         {
             ID = id;
+            lastTick = Time.time;
             InvokeRepeating(nameof(Tick), 0, 1f / TickRate);
         }
         protected virtual void Awake()
@@ -27,10 +31,10 @@ namespace Core.Multiplayer
         {
             CancelInvoke(nameof(Tick));
         }
-        protected virtual bool Tick()
+        private bool Tick()
         {
             if (!Network.I.Online) return false;
-
+            deltaTick = Time.time - lastTick;
             Modulate();
             while (Outgoing.Count != 0)
             {
@@ -38,6 +42,7 @@ namespace Core.Multiplayer
                 Network.I.EnqueueBroadcast(trms);
             }
 
+            lastTick = Time.time;
             return true;
         }
 
@@ -79,6 +84,9 @@ namespace Core.Multiplayer
         /// <summary>
         /// Execute client side behaviour
         /// </summary>
+#if UNITY_SERVER
+        [Conditional("FALSE")]
+#endif
         protected abstract void ClientModulate();
 
         /// <summary>

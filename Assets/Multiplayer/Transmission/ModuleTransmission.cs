@@ -1,6 +1,5 @@
 ﻿using Core.Util;
 using System;
-using System.Security.Cryptography;
 
 namespace Core.Multiplayer.DataTransmission
 {
@@ -25,7 +24,7 @@ namespace Core.Multiplayer.DataTransmission
         /// <summary>
         /// Actual module data
         /// </summary>
-        public new readonly ArraySegment<byte> Data;
+        public readonly ArraySegment<byte> Data;
 
         /// <summary>
         /// Constructs tranmission for data
@@ -38,7 +37,7 @@ namespace Core.Multiplayer.DataTransmission
                 throw new("Data is too large");
 
             // Setup containers
-            Stream = base.Data;
+            Stream = base.Body;
             Data = Stream.Slice(HEADERSIZE);
 
             // Setup data
@@ -55,7 +54,7 @@ namespace Core.Multiplayer.DataTransmission
         /// <param name="trms">The base transmission</param>
         public ModuleTransmission(Transmission trms) : base(trms)
         {
-            Stream = base.Data;
+            Stream = base.Body;
             Data = Stream.Slice(HEADERSIZE);
         }
         

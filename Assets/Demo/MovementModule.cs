@@ -25,13 +25,15 @@ namespace Demo
 
             // Send input data
             byte k = 0;
-            k |= (byte)(Input.GetKey(KeyCode.W) ? 1 : 0);
-            k |= (byte)(Input.GetKey(KeyCode.A) ? 2 : 0);
-            k |= (byte)(Input.GetKey(KeyCode.S) ? 4 : 0);
-            k |= (byte)(Input.GetKey(KeyCode.D) ? 8 : 0);
+            {
+                k |= (byte)(Input.GetKey(KeyCode.W) ? 0b0001 : 0);
+                k |= (byte)(Input.GetKey(KeyCode.A) ? 0b0010 : 0);
+                k |= (byte)(Input.GetKey(KeyCode.S) ? 0b0100 : 0);
+                k |= (byte)(Input.GetKey(KeyCode.D) ? 0b1000 : 0);
+            }
 
             // enq input
-            byte[] d = new byte[] { k };
+            byte[] d = new byte[1] { k };
             if (k != input)
             {
                 Outgoing.Enqueue(d);
@@ -48,25 +50,29 @@ namespace Demo
                 
                 // Get input
                 input = data[0];
-                int w = input & 1;
-                int a = input & 2;
-                int s = input & 4;
-                int d = input & 8;
-                inputV = new(w - s, d - a);
+                int w = input & 0b0001;
+                int a = input & 0b0010;
+                int s = input & 0b0100;
+                int d = input & 0b1000;
+                inputV = new Vector2(d - a, w - s);
+                if (inputV != Vector2.zero) inputV.Normalize();
             }
 
             // Send position if it will change
-            Vector2 v = speed * Time.deltaTime * inputV;
-            if (v != Vector2.zero)
+            if (inputV != Vector2.zero)
             {
-                // Update pos
-                transform.position += new Vector3(v.x, 0, v.y);
-                
-                // en-q outgoing
-                ArraySegment<byte> x = BitConverter.GetBytes(transform.position.x);
-                ArraySegment<byte> z = BitConverter.GetBytes(transform.position.z);
-                Outgoing.Enqueue(x);
-                Outgoing.Enqueue(z);
+                Vector2 v = speed * deltaTick * inputV;
+                if (v != Vector2.zero)
+                {
+                    // Update pos
+                    transform.position += new Vector3(v.x, 0, v.y);
+
+                    // en-q outgoing
+                    ArraySegment<byte> x = BitConverter.GetBytes(transform.position.x);
+                    ArraySegment<byte> z = BitConverter.GetBytes(transform.position.z);
+                    Outgoing.Enqueue(x);
+                    Outgoing.Enqueue(z);
+                }
             }
 
         }
