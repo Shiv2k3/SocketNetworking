@@ -1,4 +1,6 @@
-﻿namespace Core.Multiplayer.DataTransmission
+﻿using Core.Util;
+
+namespace Core.Multiplayer.DataTransmission
 {
     /// <summary>
     /// Transmission type used to reply to requests

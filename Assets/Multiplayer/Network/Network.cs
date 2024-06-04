@@ -40,7 +40,7 @@ namespace Core.Multiplayer
             int port = int.Parse(Environment.GetEnvironmentVariable("OPENLOBBYPORT", EnvironmentVariableTarget.User));
 
             Socket s = new(SocketType.Stream, ProtocolType.Tcp);
-            var serverIP = IPAddress.Parse(ip);
+            var serverIP = IPAddress.Loopback;// IPAddress.Parse(ip);
             var rep = new IPEndPoint(serverIP, port);
             await s.ConnectAsync(rep);
             NetworkClient client = new(s);
