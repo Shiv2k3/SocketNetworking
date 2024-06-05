@@ -47,9 +47,9 @@ namespace Core.Util
         /// <param name="strings">The strings to count</param>
         /// <returns>Length if Length is less than <seealso cref="ushort.MaxValue"/> </returns>
         /// <exception cref="ArgumentOutOfRangeException">The total Length of the strings were too long</exception>
-        public static ushort GetWithinLength(params string[] strings)
+        public static ushort GetByteStringLength(params string[] strings)
         {
-            int count = 0;
+            int count = strings.Length * ByteString.HEADERSIZE;
             foreach (var str in strings)
             {
                 count += str.Length;

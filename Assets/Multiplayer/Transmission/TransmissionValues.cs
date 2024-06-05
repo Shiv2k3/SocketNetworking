@@ -7,9 +7,13 @@ namespace Core.Multiplayer.DataTransmission
     {
         public enum Types
         {
+            // Server side types
             HostRequest,
             Reply,
-            Module
+            Query,
+
+            // Client side types
+            Module,
         }
 
         /// <summary>
@@ -19,7 +23,8 @@ namespace Core.Multiplayer.DataTransmission
         {
             {0, typeof(HostRequest) },
             {1, typeof(Reply) },
-            {2, typeof(ModuleTransmission) }
+            {2, typeof(LobbyQuery) },
+            {3, typeof(ModuleTransmission) },
         };
 
         /// <summary>
@@ -29,9 +34,10 @@ namespace Core.Multiplayer.DataTransmission
         {
             {IndexTransmission[0], 0 },
             {IndexTransmission[1], 1 },
-            {IndexTransmission[2], 2 }
+            {IndexTransmission[2], 2 },
+            {IndexTransmission[3], 3 },
         };
 
     }
-
+    public class IncorrectTransmission : Exception { }
 }
