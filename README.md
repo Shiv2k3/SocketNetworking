@@ -1,2 +1,7 @@
-A simple p2p networked component system.
-Each client has a Network object which receives/sends transmissions for gameobject components called NetworkedModules.
+Simple Message-Passing network design, Network class handles transportation of data between NetworkedModule(s), which work on the data. 
+
+TBD:
+
+UDP Implemention
+
+NAT Traversal via ICE
