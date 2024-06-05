@@ -4,7 +4,8 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Core.Util"
+        "Core.Util",
+        "Core.Multiplayer"
     ],
     "includePlatforms": [
         "Editor"

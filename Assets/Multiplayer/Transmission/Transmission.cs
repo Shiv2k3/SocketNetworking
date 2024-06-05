@@ -71,7 +71,7 @@ namespace Core.Multiplayer.DataTransmission
             Body = new(Stream, HEADERSIZE, data.Length);
         }
 
-        public Transmission(Transmission trms)
+        protected Transmission(Transmission trms)
         {
             Stream = trms.Stream;
             Body = trms.Body;

@@ -5,10 +5,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using UnityEngine;
+#nullable enable
 
 namespace Core.Multiplayer
 {
@@ -17,9 +19,12 @@ namespace Core.Multiplayer
     /// </summary>
     public partial class Network : Singleton<Network>
     {
+        private const bool LOCALDEV = false;
+
         public bool IsHost { get; private set; }
         public bool Online { get; private set; }
 
+        private NetworkClient OpenLobby = null;
         private NetworkClient Host = null;
         private List<NetworkClient> Interfaces = null;
         private Queue<ModuleTransmission> ModuleTransmissions = null;
@@ -39,28 +44,41 @@ namespace Core.Multiplayer
             string ip = Environment.GetEnvironmentVariable("OPENLOBBYIP", EnvironmentVariableTarget.User);
             int port = int.Parse(Environment.GetEnvironmentVariable("OPENLOBBYPORT", EnvironmentVariableTarget.User));
 
-            Socket s = new(SocketType.Stream, ProtocolType.Tcp);
-            var serverIP = IPAddress.Loopback;// IPAddress.Parse(ip);
+            Socket opl = new(SocketType.Stream, ProtocolType.Tcp);
+
+            var serverIP = LOCALDEV ? IPAddress.Loopback : IPAddress.Parse(ip);
             var rep = new IPEndPoint(serverIP, port);
-            await s.ConnectAsync(rep);
-            NetworkClient client = new(s);
+            var lep = new IPEndPoint(IPAddress.Any, port);
+            await opl.ConnectAsync(rep);
+            OpenLobby = new(opl);
 
             HostRequest req = new(lobbyName, lobbyPassword, visible, maxClients);
-            await client.Send(req.Payload);
-            var trms = await client.TryGetTransmission();
+            await OpenLobby.Send(req.Payload);
+            var trms = await OpenLobby.TryGetTransmission();
             bool success = trms is not null && new Reply(trms).ReplyCode == Reply.Code.LobbyCreated;
 
-            if(success)
+            if (success)
             {
                 Debug.Log("Lobby was deployed successfully");
                 Online = true;
-                Host = client;
+                IsHost = true;
+
+                Socket listener = new(SocketType.Stream, ProtocolType.Tcp);
+                if (!LOCALDEV)
+                {
+                    listener.Bind(lep);
+                    listener.Listen(10);
+                }
+
+                Host = new(listener);
+
                 return true;
             }
             else
             {
                 Debug.LogError("Lobby deployment unsuccessful");
-                client.Disconnect();
+                OpenLobby.Disconnect();
+                Deinitalize();
                 return false;
             }
         }
@@ -68,6 +86,46 @@ namespace Core.Multiplayer
         {
             throw null;
         }
+        public async Task<StringArray?> SendQuery(string name)
+        {
+            if (Online)
+            {
+                LobbyQuery lq = new(name);
+                await OpenLobby.Send(lq.Payload);
+                Debug.Log("Sent query request, awaiting reply");
+                Transmission t;
+                while ((t = await OpenLobby.TryGetTransmission()) != null)
+                {
+                    Transmission.Types type = (Transmission.Types)t.TypeID;
+                    try
+                    {
+                        switch (type)
+                        {
+                            case Transmission.Types.Reply:
+                                Reply r = new(t);
+                                Debug.LogError("Received reply code from OpenLobby: " + r.ReplyCode);
+                                return null;
+                            case Transmission.Types.Query:
+                                lq = new(t);
+                                Debug.Log("Received query result");
+                                return lq.Lobbies;
+
+                            default: throw new IncorrectTransmission();
+                        }
+                    }
+                    catch (IncorrectTransmission)
+                    {
+                        Debug.LogError($"Wrong transmission type received: {type}");
+                        return null;
+                    }
+                    catch (Exception) { throw; }
+                }
+            }
+
+            Debug.LogError("Network or OpenLobby is OFFLINE, cannot send queries");
+            return null;
+        }
+
         private void Initalize()
         {
             Interfaces = new();
@@ -190,7 +248,7 @@ namespace Core.Multiplayer
             foreach (var i in Interfaces)
             {
                 var trms = await i.TryGetTransmission();
-                
+
                 // Cancel if disconnected
                 if (!Online)
                 {

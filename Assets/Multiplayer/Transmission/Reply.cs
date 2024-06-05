@@ -1,6 +1,4 @@
-﻿using Core.Util;
-
-namespace Core.Multiplayer.DataTransmission
+﻿namespace Core.Multiplayer.DataTransmission
 {
     /// <summary>
     /// Transmission type used to reply to requests
@@ -16,7 +14,11 @@ namespace Core.Multiplayer.DataTransmission
             /// <summary>
             /// Lobby creation was unsuccessful
             /// </summary>
-            HostingError
+            HostingError,
+            /// <summary>
+            /// Error encountered during processing lobby query
+            /// </summary>
+            QueryError,
         }
 
         public Code ReplyCode { get => (Code)Body[0]; set => Body[0] = (byte)value; }

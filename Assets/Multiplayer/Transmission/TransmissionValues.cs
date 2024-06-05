@@ -39,5 +39,5 @@ namespace Core.Multiplayer.DataTransmission
         };
 
     }
-
+    public class IncorrectTransmission : Exception { }
 }

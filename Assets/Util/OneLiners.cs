@@ -47,12 +47,12 @@ namespace Core.Util
         /// <param name="strings">The strings to count</param>
         /// <returns>Length if Length is less than <seealso cref="ushort.MaxValue"/> </returns>
         /// <exception cref="ArgumentOutOfRangeException">The total Length of the strings were too long</exception>
-        public static ushort GetTStringLength(params string[] strings)
+        public static ushort GetByteStringLength(params string[] strings)
         {
-            int count = 0;
+            int count = strings.Length * ByteString.HEADERSIZE;
             foreach (var str in strings)
             {
-                count += str.Length + TString.HEADERSIZE;
+                count += str.Length;
             }
             return (count <= ushort.MaxValue) ? (ushort)count : throw new ArgumentOutOfRangeException("Strings were too long");
         }
