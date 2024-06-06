@@ -1,6 +1,8 @@
-using Core.Multiplayer;
+using Core.Util;
+using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using Network = Core.Multiplayer.Network;
 
@@ -18,22 +20,23 @@ namespace Demo
             search.onClick.AddListener(RequestQuery);
         }
 
-        async void RequestQuery()
+        void RequestQuery()
         {
-            Core.Util.StringArray r = await Network.I.SendQuery(searchName.text);
-            if (r is not null)
+            Action<StringArray> onComplete = new(Lobbies =>
             {
-                while (ContentPanel.childCount != 0)
-                {
-                    Destroy(ContentPanel.GetChild(0));
-                }
-
-                for (int i = 0; i < r.Count.Value; i++)
+                for (int i = 0; i < Lobbies.Count.Value; i++)
                 {
                     var card = Instantiate(LobbyCardPrefab, ContentPanel);
-                    card.Name.text = r[i].Value;
+                    card.Name.text = Lobbies[i].Value;
                 }
+            });
+
+            Network.I.SendLobbyQuery(searchName.text, onComplete);
+            foreach (Transform item in ContentPanel.transform)
+            {
+                Destroy(item.gameObject);
             }
+
         }
     }
 }

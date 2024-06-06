@@ -2,15 +2,12 @@
 using Core.Util;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using UnityEngine;
-#nullable enable
+using UnityEngine.Events;
 
 namespace Core.Multiplayer
 {
@@ -25,10 +22,11 @@ namespace Core.Multiplayer
         public bool Online { get; private set; }
 
         private NetworkClient OpenLobby = null;
-        private NetworkClient Host = null;
-        private List<NetworkClient> Interfaces = null;
-        private Queue<ModuleTransmission> ModuleTransmissions = null;
+        private Action<StringArray> QueryReplyCallback = null;
 
+        private NetworkClient Host = null;
+        private List<NetworkClient> ClientInterfaces = null;
+        private Queue<ModuleTransmission> ModuleTransmissions = null;
         private Dictionary<ushort, NetworkedModule> ModulesMap = null;
 
         public async Task<bool> HostLobby(string lobbyName, string lobbyPassword, bool visible, byte maxClients)
@@ -86,49 +84,24 @@ namespace Core.Multiplayer
         {
             throw null;
         }
-        public async Task<StringArray?> SendQuery(string name)
+        public async void SendLobbyQuery(string name, Action<StringArray> onComplete)
         {
-            if (Online)
+            if (OpenLobby is not null)
             {
                 LobbyQuery lq = new(name);
                 await OpenLobby.Send(lq.Payload);
-                Debug.Log("Sent query request, awaiting reply");
-                Transmission t;
-                while ((t = await OpenLobby.TryGetTransmission()) != null)
-                {
-                    Transmission.Types type = (Transmission.Types)t.TypeID;
-                    try
-                    {
-                        switch (type)
-                        {
-                            case Transmission.Types.Reply:
-                                Reply r = new(t);
-                                Debug.LogError("Received reply code from OpenLobby: " + r.ReplyCode);
-                                return null;
-                            case Transmission.Types.Query:
-                                lq = new(t);
-                                Debug.Log("Received query result");
-                                return lq.Lobbies;
-
-                            default: throw new IncorrectTransmission();
-                        }
-                    }
-                    catch (IncorrectTransmission)
-                    {
-                        Debug.LogError($"Wrong transmission type received: {type}");
-                        return null;
-                    }
-                    catch (Exception) { throw; }
-                }
+                QueryReplyCallback ??= onComplete;
+                Debug.Log("Lobby query has been sent to OpenLobby");
             }
-
-            Debug.LogError("Network or OpenLobby is OFFLINE, cannot send queries");
-            return null;
+            else
+            {
+                Debug.LogError("Connection to OpenLobby hasn't been made");
+            }
         }
 
         private void Initalize()
         {
-            Interfaces = new();
+            ClientInterfaces = new();
             ModuleTransmissions = new();
             ModulesMap = new();
             MapAllModules();
@@ -148,11 +121,11 @@ namespace Core.Multiplayer
         }
         private void Deinitalize()
         {
-            foreach (var client in Interfaces)
+            foreach (var client in ClientInterfaces)
             {
                 client.Disconnect();
             }
-            Interfaces = null;
+            ClientInterfaces = null;
 
             foreach (var module in ModulesMap)
             {
@@ -207,7 +180,7 @@ namespace Core.Multiplayer
                 _listening = true;
                 Socket clientSocket = await Host.Socket.AcceptAsync();
                 Debug.Log("Client CONNECTED");
-                Interfaces.Add(new(clientSocket));
+                ClientInterfaces.Add(new(clientSocket));
                 _listening = false;
             }
             catch (ObjectDisposedException)
@@ -227,9 +200,9 @@ namespace Core.Multiplayer
             while (NetworkClient.Broadcasts.Count != 0)
             {
                 var trms = NetworkClient.Broadcasts.Dequeue();
-                for (int clientID = 0; clientID < Interfaces.Count; clientID++)
+                for (int clientID = 0; clientID < ClientInterfaces.Count; clientID++)
                 {
-                    await Interfaces[clientID].Send(trms.Payload);
+                    await ClientInterfaces[clientID].Send(trms.Payload);
                 }
             }
 
@@ -245,9 +218,10 @@ namespace Core.Multiplayer
             if (_receiving) return;
             _receiving = true;
 
-            foreach (var i in Interfaces)
+            // Client transmissions
+            foreach (NetworkClient client in ClientInterfaces)
             {
-                var trms = await i.TryGetTransmission();
+                Transmission trms = await client.TryGetTransmission();
 
                 // Cancel if disconnected
                 if (!Online)
@@ -259,6 +233,26 @@ namespace Core.Multiplayer
                 if (trms != null)
                     ModuleTransmissions.Enqueue(new(trms));
             }
+
+            // OpenLobby transmissions
+            {
+                Transmission trms = await OpenLobby.TryGetTransmission();
+                if (trms is not null)
+                {
+                    Transmission.Types type = (Transmission.Types)trms.TypeID;
+                    switch (type)
+                    {
+                        case Transmission.Types.Query:
+                            {
+                                LobbyQuery lq = new(trms);
+                                QueryReplyCallback(lq.Lobbies);
+                                break;
+                            }
+                        default: throw new IncorrectTransmission();
+                    }
+                }
+            }
+
             _receiving = false;
         }
 
