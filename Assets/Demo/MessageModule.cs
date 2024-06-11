@@ -1,11 +1,11 @@
-﻿using Core.Multiplayer;
-using System;
+﻿using System;
 using System.Text;
 using UnityEngine;
+using Core.Multiplayer.Connections;
 
-namespace Demo
+namespace Core.Demo
 {
-    public class MessageModule : NetworkedModule
+    public class MessageModule : Module
     {
         public string msg = "NONE";
         private int lastSent = "NONE".GetHashCode();

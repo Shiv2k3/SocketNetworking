@@ -1,0 +1,527 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>OpenLobby.Utility</name>
+    </assembly>
+    <members>
+        <member name="T:OpenLobby.Utility.Network.Client">
+            <summary>
+            Repersents a network client
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Network.Client.Available">
+            <summary>
+            True when new transmission is available
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Network.Client.RemoteEndpoint">
+            <summary>
+            The remote endpoint, null if it listening
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Network.Client.LocalPort">
+            <summary>
+            The port of the local endpoint
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Network.Client.#ctor(System.Int32)">
+            <summary>
+            Create a listening socket
+            </summary>
+            <param name="port">The port to listen on</param>
+        </member>
+        <member name="M:OpenLobby.Utility.Network.Client.#ctor(System.Net.IPEndPoint)">
+            <summary>
+            Create a listening socket
+            </summary>
+            <param name="localEndpoint">The endpoint to listen on</param>
+        </member>
+        <member name="M:OpenLobby.Utility.Network.Client.#ctor(System.Net.Sockets.Socket)">
+            <summary>
+            Creates a client using a remote socket
+            </summary>
+            <param name="socket">The remote socket to use</param>
+            <exception cref="T:System.ArgumentException">The given socket was not remote</exception>
+        </member>
+        <member name="M:OpenLobby.Utility.Network.Client.Disconnect">
+            <summary>
+            Closes the connection
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Network.Client.TryGetTransmission">
+            <summary>
+            Tries to get a new transmission
+            </summary>
+            <returns>Null if no transmission is available</returns>
+        </member>
+        <member name="M:OpenLobby.Utility.Network.Client.Send(System.Byte[])">
+            <summary>
+            Sends the payload
+            </summary>
+            <param name="payload">The payload to send</param>
+            <returns>False if unable to send</returns>
+        </member>
+        <member name="M:OpenLobby.Utility.Network.Client.Accept">
+            <summary>
+            Accepts one new client asynchronously
+            </summary>
+            <returns>The new client</returns>
+        </member>
+        <member name="M:OpenLobby.Utility.Network.Client.ToString">
+            <returns>Remode endpoint as a string</returns>
+        </member>
+        <member name="T:OpenLobby.Utility.Transmissions.HostRequest">
+            <summary>
+            A transmission to request to host a lobby
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.HostRequest.MaxClients">
+            <summary>
+            Maximum number of clients
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.HostRequest.Visible">
+            <summary>
+            Is the lobby public
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.HostRequest.Name">
+            <summary>
+            Lobby name
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.HostRequest.Password">
+            <summary>
+            Lobby password
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.HostRequest.#ctor(System.String,System.String,System.Boolean,System.Byte)">
+            <summary>
+            Constructs a Host Request transmission
+            </summary>
+            <param name="name">The lobby name</param>
+            <param name="password">The lobby password used to authenticate clients</param> 
+            <param name="publicVisible">Is the lobby publicly searchable</param>
+            <param name="maxClients">Max number of playe, must be greater than 1</param>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.HostRequest.#ctor(OpenLobby.Utility.Transmissions.Transmission)">
+            <summary>
+            Reconstructs the Host Request using a transmission
+            </summary>
+        </member>
+        <member name="T:OpenLobby.Utility.Transmissions.JoinRequest">
+            <summary>
+            Represents a Join Request
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Transmissions.JoinRequest.LobbyID">
+            <summary>
+            The ID of the lobby
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Transmissions.JoinRequest.LobbyPassword">
+            <summary>
+            The Lobby password
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Transmissions.JoinRequest.HostAddress">
+            <summary>
+            The IP address and port of the host
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.JoinRequest.#ctor(System.String,System.String)">
+            <summary>
+            Creates the request
+            </summary>
+            <param name="lobbyID">Lobby id</param>
+            <param name="password">Lobby password</param>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.JoinRequest.#ctor(System.String)">
+            <summary>
+            Creates the reply with host endpoint info
+            </summary>
+            <param name="hostEndpoint">The host endpoint</param>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.JoinRequest.#ctor(OpenLobby.Utility.Transmissions.Transmission,System.Boolean)">
+            <summary>
+            Extracts the reply or request
+            </summary>
+            <param name="trms"></param>
+            <param name="isReply">Is this a reply or a request</param>
+        </member>
+        <member name="T:OpenLobby.Utility.Transmissions.LobbyQuery">
+            <summary>
+            Repersents a request to query for lobbies
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.LobbyQuery.Search">
+            <summary>
+            The search parameter
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.LobbyQuery.Lobbies">
+            <summary>
+            The query result as a keypair value of lobbyID-lobbyName
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.LobbyQuery.#ctor(System.String)">
+            <summary>
+            Creates query, client-side
+            </summary>
+            <param name="search">Lobby name</param>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.LobbyQuery.#ctor(System.String[])">
+            <summary>
+            Construct using lobbies
+            </summary>
+            <param name="lobbies"></param>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.LobbyQuery.#ctor(OpenLobby.Utility.Transmissions.Transmission,System.Boolean)">
+            <summary>
+            Creates query reply, server-side
+            </summary>
+            <param name="trms">The transmission to use for reconstruction</param>
+            <param name="isReply">Is this a reply or request</param>
+        </member>
+        <member name="T:OpenLobby.Utility.Transmissions.Reply">
+            <summary>
+            Transmission type used to reply to requests
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Reply.ErrorTypeCodeMap">
+            <summary>
+            Maps erronous TransmissionType to a ReplyCode
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Reply.PassTypeCodeMap">
+            <summary>
+            Maps successful TransmissionType to a ReplyCode
+            </summary>
+        </member>
+        <member name="T:OpenLobby.Utility.Transmissions.Reply.Code">
+            <summary>
+            Reply code
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Reply.Code.HostingSuccess">
+            <summary>
+            Lobby creation was a success 
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Reply.Code.HostingError">
+            <summary>
+            Lobby creation was unsuccessful
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Reply.Code.QueryError">
+            <summary>
+            Error encountered when completing query
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Reply.Code.WrongPassword">
+            <summary>
+            The wrong password was provided
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Reply.Code.JoinError">
+            <summary>
+            There was an error processing the join request
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Transmissions.Reply.ReplyCode">
+            <summary>
+            The received reply code
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.Reply.#ctor(OpenLobby.Utility.Transmissions.Reply.Code)">
+            <summary>
+            Construct using a code
+            </summary>
+            <param name="code"></param>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.Reply.#ctor(OpenLobby.Utility.Transmissions.Transmission)">
+            <summary>
+            Construct using transmission
+            </summary>
+            <param name="trms"></param>
+        </member>
+        <member name="T:OpenLobby.Utility.Transmissions.Transmission">
+            <summary>
+            Repersents a base header-only transmission without any data transmission, inherieting classes should simply wrap over Data
+            </summary>
+        </member>
+        <member name="T:OpenLobby.Utility.Transmissions.Transmission.TransmisisonType">
+            <summary>
+            Transmission types
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Transmission.HEADERSIZE">
+            <summary>
+            The number of header bytes, 2b TypeID + 2b Length
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Transmission.MAXBYTES">
+            <summary>
+            Maximum number of transmission bytes allowed
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Transmission.Stream">
+            <summary>
+            The final payload
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Transmissions.Transmission.Body">
+            <summary>
+            Stream's body
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Transmissions.Transmission.TypeID">
+            <summary>
+            Transmission type identifier
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Transmissions.Transmission.Type">
+            <summary>
+            Same as TypeID but returns Types enum
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Transmissions.Transmission.Length">
+            <summary>
+            The number of bytes of data
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.Transmission.#ctor(System.UInt16,System.UInt16)">
+            <summary>
+            Create base class members
+            </summary>
+            <param name="type">The type of the derived class</param>
+            <param name="dataLength">Length of data</param>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.Transmission.#ctor(OpenLobby.Utility.Transmissions.Transmission)">
+            <summary>
+            Initalizates transmission using another transmission, shouldn't be used on the base class
+            </summary>
+            <param name="trms">The transmission to use</param>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.Transmission.#ctor(System.Byte[])">
+            <summary>
+            Use payload header to create instance for payload intel
+            </summary>
+            <param name="header"></param>
+        </member>
+        <member name="M:OpenLobby.Utility.Transmissions.Transmission.#ctor(System.Byte[],System.Byte[])">
+            <summary>
+            Create transmission by combining the header and body
+            </summary>
+            <param name="header">The head of the payload</param>
+            <param name="body">The body of the payload</param>
+        </member>
+        <member name="P:OpenLobby.Utility.Transmissions.Transmission.Payload">
+            <summary>
+            The final payload
+            </summary>
+        </member>
+        <member name="T:OpenLobby.Utility.Transmissions.UnknownTransmission">
+            <summary>
+            Unknown transmission type exception
+            </summary>
+        </member>
+        <member name="T:OpenLobby.Utility.Utils.ByteMember">
+            <summary>
+            Wraps the serialization and deserialization of a byte into an arr
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Utils.ByteMember.Value">
+            <summary>
+            Get the byte value
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Utils.ByteMember.AsBool">
+            <summary>
+            True if byte is greater than 0
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.ByteMember.#ctor(System.ArraySegment{System.Byte}@,System.Int32,System.Byte)">
+            <summary>
+            Constructs from the body at index set to value
+            </summary>
+            <param name="body"></param>
+            <param name="index"></param>
+            <param name="value"></param>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.ByteMember.#ctor(System.ArraySegment{System.Byte}@,System.Int32)">
+            <summary>
+            Constructs using the byte at index
+            </summary>
+            <param name="body"></param>
+            <param name="index"></param>
+        </member>
+        <member name="T:OpenLobby.Utility.Utils.ByteString">
+            <summary>
+            String encoded into an array
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Utils.ByteString.HEADERSIZE">
+            <summary>
+            1B
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Utils.ByteString.Value">
+            <summary>
+            The string in the stream;
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Utils.ByteString.StreamLength">
+            <summary>
+            The length of the stream
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.ByteString.#ctor(System.String,System.ArraySegment{System.Byte},System.Int32)">
+            <summary>
+            Encodes a string into an array from an index
+            </summary>
+            <param name="value">The string to encode</param>
+            <param name="arr">The backstore</param>
+            <param name="start">The starting index at the backstore</param>
+            <exception cref="T:System.ArgumentException">Length of arr or value was invalid</exception>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.ByteString.#ctor(System.ArraySegment{System.Byte},System.Int32)">
+            <summary>
+            Reconstructs string using a backstore
+            </summary>
+            <param name="arr">The backstore to use for decoding the string</param>
+            <param name="start">The starting index of the encoding in arr</param>
+        </member>
+        <member name="T:OpenLobby.Utility.Utils.Helper">
+            <summary>
+            Helper functions
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.Helper.SetUshort(System.UInt16,System.Int32,System.Int32,System.ArraySegment{System.Byte})">
+            <summary>
+            Sets the bytes from ushort into arr at index i1 and i2
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.Helper.GetUshort(System.Int32,System.Int32,System.ArraySegment{System.Byte})">
+            <summary>
+            Gets ushort from arr by using bytes at index i1 and i2
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.Helper.GetByteStringLength(System.String[])">
+            <summary>
+            Counts Length of the ByteStrings
+            </summary>
+            <param name="strings">The strings to count</param>
+            <returns>Length if Length is less than <seealso cref="F:System.UInt16.MaxValue"/> </returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">The total Length of the strings were too long</exception>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.Helper.GetStringLength(System.String[])">
+            <summary>
+            Counts Length of the strings
+            </summary>
+            <param name="strings">The strings to count</param>
+            <returns>Length if Length is less than <seealso cref="F:System.UInt16.MaxValue"/> </returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">The total Length of the strings were too long</exception>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.Helper.GetIP(System.ArraySegment{System.Byte})">
+            <summary>
+            Creates IPv4 string form array
+            </summary>
+            <param name="arraySegment">Must have at least 4 elements</param>
+            <returns>The IP string</returns>
+        </member>
+        <member name="T:OpenLobby.Utility.Utils.Lobby">
+            <summary>
+            Repersents a Lobby
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Utils.Lobby.Host">
+            <summary>
+            Endpoint of the lobby host
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Utils.Lobby.ID">
+            <summary>
+            Lobby ID
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Utils.Lobby.Name">
+            <summary>
+            Lobby name
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Utils.Lobby.Password">
+            <summary>
+            Lobby password
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Utils.Lobby.PublicVisible">
+            <summary>
+            Is the lobby public
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Utils.Lobby.MaxClients">
+            <summary>
+            Lobby max client count
+            </summary>
+        </member>
+        <member name="F:OpenLobby.Utility.Utils.Lobby.JoinedClients">
+            <summary>
+            List of joined clients
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.Lobby.#ctor(System.Net.IPEndPoint,System.UInt64,System.String,System.String,System.Boolean,System.Byte)">
+            <summary>
+            Creates the lobby record
+            </summary>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.Lobby.ToString">
+            <summary>
+            Gets the name
+            </summary>
+            <returns>A formatted string with the ID + Name + Host</returns>
+        </member>
+        <member name="T:OpenLobby.Utility.Utils.StringArray">
+            <summary>
+            An array of ByteStrings
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Utils.StringArray.Count">
+            <summary>
+            Total number of strings
+            </summary>
+        </member>
+        <member name="P:OpenLobby.Utility.Utils.StringArray.Item(System.Int32)">
+            <summary>
+            Index the internal byte stream
+            </summary>
+            <param name="index"></param>
+            <returns></returns>
+            <exception cref="T:System.IndexOutOfRangeException"></exception>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.StringArray.#ctor(System.ArraySegment{System.Byte}@,System.Int32,System.String[])">
+            <summary>
+            Constructs the string array into the array segment from the start index
+            </summary>
+            <param name="body">The array segment the strings are stored in</param>
+            <param name="start">The starting index of the stream</param>
+            <param name="strings">The strings to place in the array segment</param>
+            <exception cref="T:System.ArgumentException">The given string was too long</exception>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.StringArray.#ctor(System.ArraySegment{System.Byte}@,System.Int32)">
+            <summary>
+            Reconstructs using the array segment and starting index
+            </summary>
+            <param name="body">The array segment with the strings</param>
+            <param name="start">The starting index of the stream</param>
+        </member>
+        <member name="M:OpenLobby.Utility.Utils.StringArray.GetHeaderSize(System.String[])">
+            <summary>
+            Gets the StringArray header that encodes an array of strings
+            </summary>
+            <param name="strings">The strings that will be encoded</param>
+            <returns>The header length</returns>
+        </member>
+    </members>
+</doc>

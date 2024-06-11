@@ -1,3 +1,4 @@
+using Sirenix.OdinInspector;
 using System;
 using UnityEngine;
 
@@ -65,7 +66,7 @@ namespace Core.Util
         /// <summary>
         /// If the instance should stay loaded even if the scene changes
         /// </summary>
-        [SerializeField] protected bool ScenePersistent = false;
+        [SerializeField, FoldoutGroup("Singleton")] protected bool ScenePersistent = false;
 
         /// <summary>
         ///     Holds the unique instance for this class
@@ -221,11 +222,10 @@ namespace Core.Util
         #endregion
 
         #region Debug Methods (available in child classes)
-        [Header("Debug")]
         /// <summary>
         ///  Set this to true either by code or in the inspector to print trace log messages
         /// </summary>
-        [SerializeField] protected bool PrintTrace = false;
+        [SerializeField, FoldoutGroup("Singleton")] protected bool PrintTrace = false;
         protected void PrintLog(string str, params object[] args)
         {
             Print(UnityEngine.Debug.Log, PrintTrace, str, args);

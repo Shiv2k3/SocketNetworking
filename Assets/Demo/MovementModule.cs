@@ -1,10 +1,10 @@
-using Core.Multiplayer;
 using System;
 using UnityEngine;
+using Core.Multiplayer.Connections;
 
-namespace Demo
+namespace Core.Demo
 {
-    public class MovementModule : NetworkedModule
+    public class MovementModule : Module
     {
         public float speed = 1f;
 

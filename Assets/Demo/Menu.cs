@@ -1,9 +1,9 @@
-using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Sirenix.OdinInspector;
 
-namespace Demo
+namespace Core.Demo
 {
     public class Menu : MonoBehaviour
     {
@@ -22,15 +22,15 @@ namespace Demo
         }
 
         [Button("Host Lobby")]
-        async void HostLobby()
+        void HostLobby()
         {
-            await Core.Multiplayer.Network.I.HostLobby(LobbyName.text, LobbyPassword.text, Public.isOn, byte.Parse(MaxPlayers.text));
+            Multiplayer.Connections.Network.I.HostLobby(LobbyName.text, LobbyPassword.text, Public.isOn, byte.Parse(MaxPlayers.text));
         }
 
         [Button("Disconnect")]
         void Disconnect()
         {
-            Core.Multiplayer.Network.I.Disconnect();
+            Multiplayer.Connections.Network.I.Disconnect();
         }
 
     }

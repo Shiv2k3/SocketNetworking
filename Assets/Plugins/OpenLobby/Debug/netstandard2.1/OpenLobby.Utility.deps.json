@@ -1,0 +1,24 @@
+{
+  "runtimeTarget": {
+    "name": ".NETStandard,Version=v2.1/",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETStandard,Version=v2.1": {},
+    ".NETStandard,Version=v2.1/": {
+      "OpenLobby.Utility/1.0.0": {
+        "runtime": {
+          "OpenLobby.Utility.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "OpenLobby.Utility/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

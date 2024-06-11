@@ -1,6 +1,6 @@
 {
-    "name": "Core.Util",
-    "rootNamespace": "Core.Util",
+    "name": "Core.Multiplayer.Transmissions",
+    "rootNamespace": "Core.Multiplayer.Transmissions",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

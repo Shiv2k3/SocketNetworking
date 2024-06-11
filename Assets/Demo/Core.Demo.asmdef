@@ -1,7 +1,11 @@
 {
-    "name": "Core.Util",
-    "rootNamespace": "Core.Util",
-    "references": [],
+    "name": "Core.Demo",
+    "rootNamespace": "Core.Demo",
+    "references": [
+        "GUID:cfd21593da17e434ca4bc031d2f27b92",
+        "GUID:505c541098c1774408483222f7271f52",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
