@@ -23,7 +23,7 @@ namespace Core.Demo
         {
             Action<StringArray> onComplete = new(Lobbies =>
             {
-                for (int i = 0; i < Lobbies.Count.Value / 2; i++)
+                for (int i = 0; i < Lobbies.Count / 2; i++)
                 {
                     var id = Lobbies[i * 2];
                     var name = Lobbies[i * 2 + 1];

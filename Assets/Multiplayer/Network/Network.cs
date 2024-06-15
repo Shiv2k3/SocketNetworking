@@ -10,6 +10,7 @@ using OpenLobby.Utility.Network;
 using System.Collections.Generic;
 using Core.Multiplayer.Transmissions;
 using OpenLobby.Utility.Transmissions;
+using System.Threading;
 
 namespace Core.Multiplayer.Connections
 {
@@ -20,6 +21,7 @@ namespace Core.Multiplayer.Connections
     {
         public bool IsHost { get; private set; }
         public bool Online { get; private set; }
+        public CancellationTokenSource DisconnectSource { get; private set; }
 
         // Connections
         private Client Host = null;
@@ -65,7 +67,6 @@ namespace Core.Multiplayer.Connections
                             Debug.Log("OpenLobby has hosted the lobby");
 
                             // Get IP info and Start listening
-                            int port = OpenLobby.I.Server.LocalPort;
                             IPEndPoint lep = new(IPAddress.Any, 0);
                             Host = new(lep);
 
@@ -137,50 +138,22 @@ namespace Core.Multiplayer.Connections
                 }
 
                 var jr = new JoinRequest(t, true);
-                var split = jr.HostAddress.Value.Split(":");
-                string ip = split[0];
-                string port = split[1];
-                IPEndPoint ep = new(IPAddress.Parse(ip), int.Parse(port));
-                OnComplete(ep);
-            }
-        }
-
-        public void SendLobbyQuery(string name, Action<StringArray> onComplete)
-        {
-            OpenLobby.I.MessageReceivedEvent += OnReply;
-            LobbyQuery lq = new(name);
-            OpenLobby.I.EnqueueTransmission(lq);
-            Debug.Log("Lobby query has been sent to OpenLobby");
-
-            void OnReply(Transmission t)
-            {
-                if (t.Type != Transmission.TransmisisonType.Query && t.Type != Transmission.TransmisisonType.Reply) return;
-                OpenLobby.I.MessageReceivedEvent -= OnReply;
-
-                if (t.Type == Transmission.TransmisisonType.Reply)
+                var ipPort = jr.HostAddress.Value.Split(":");
+                if (int.TryParse(ipPort[1], out int port))
                 {
-                    Reply r = new(t);
-                    Debug.LogError("Received reply form OpenLobby: " + r.ReplyCode);
-                    return;
-                }
+                    if (IPAddress.TryParse(ipPort[0], out IPAddress address))
+                    {
+                        IPEndPoint rep = new IPEndPoint(address, port);
+                        IPEndPoint lep = new IPEndPoint(IPAddress.Any, 0);
+                        Host = new(lep, rep);
 
-                LobbyQuery lq = new(t, true);
-                onComplete(lq.Lobbies);
-            }
-        }
-        private async void ReceiveClients()
-        {
-            try
-            {
-                Client client = await Host.Accept();
-                ClientInterfaces.Add(client);
-                Debug.Log("Client CONNECTED");
-                if (Online)
-                {
-                    ReceiveClients();
+                        Online = true;
+                        IsHost = false;
+
+                        OnComplete(rep);
+                    }
                 }
             }
-            catch {}
         }
         private void InitalizeMembers()
         {
@@ -188,6 +161,7 @@ namespace Core.Multiplayer.Connections
             ModuleTransmissions = new();
             Broadcasts = new();
             ModulesMap = new();
+            DisconnectSource = new();
             MapAllModules();
 
             void MapAllModules()
@@ -217,16 +191,50 @@ namespace Core.Multiplayer.Connections
             }
             ModulesMap = null;
 
+            DisconnectSource = null;
             ModuleTransmissions = null;
             Broadcasts.Clear();
         }
-        public async void Disconnect()
+
+        public void SendLobbyQuery(string name, Action<StringArray> onComplete)
         {
+            OpenLobby.I.MessageReceivedEvent += OnReply;
+            LobbyQuery lq = new(name);
+            OpenLobby.I.EnqueueTransmission(lq);
+            Debug.Log("Lobby query has been sent to OpenLobby");
+
+            void OnReply(Transmission t)
+            {
+                if (t.Type != Transmission.TransmisisonType.Query && t.Type != Transmission.TransmisisonType.Reply) return;
+                OpenLobby.I.MessageReceivedEvent -= OnReply;
+
+                if (t.Type == Transmission.TransmisisonType.Reply)
+                {
+                    Reply r = new(t);
+                    Debug.LogError("Received reply form OpenLobby: " + r.ReplyCode);
+                    return;
+                }
+
+                LobbyQuery lq = new(t, true);
+                onComplete(lq.Lobbies);
+            }
+        }
+        private async void ReceiveClients()
+        {
+            Client client = await Host.Accept(DisconnectSource.Token);
+            ClientInterfaces.Add(client);
+            Debug.Log("Client CONNECTED");
+            if (Online)
+            {
+                ReceiveClients();
+            }
+        }
+        public void Disconnect()
+        {
+            DisconnectSource.Cancel();
             Host.Disconnect();
             IsHost = false;
             Online = false;
-
-            await Task.Yield();
 
             DeinitalizeMembers();
 

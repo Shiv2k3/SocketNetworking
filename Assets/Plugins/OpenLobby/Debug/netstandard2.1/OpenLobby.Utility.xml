@@ -36,6 +36,13 @@
             </summary>
             <param name="localEndpoint">The endpoint to listen on</param>
         </member>
+        <member name="M:OpenLobby.Utility.Network.Client.#ctor(System.Net.IPEndPoint,System.Net.IPEndPoint)">
+            <summary>
+            Connects to a remote endpoint
+            </summary>
+            <param name="localEndpoint">The local endpoint</param>
+            <param name="remoteEndpoint">The remote endpoint</param>
+        </member>
         <member name="M:OpenLobby.Utility.Network.Client.#ctor(System.Net.Sockets.Socket)">
             <summary>
             Creates a client using a remote socket
@@ -61,7 +68,7 @@
             <param name="payload">The payload to send</param>
             <returns>False if unable to send</returns>
         </member>
-        <member name="M:OpenLobby.Utility.Network.Client.Accept">
+        <member name="M:OpenLobby.Utility.Network.Client.Accept(System.Threading.CancellationToken)">
             <summary>
             Accepts one new client asynchronously
             </summary>
@@ -341,20 +348,20 @@
             True if byte is greater than 0
             </summary>
         </member>
-        <member name="M:OpenLobby.Utility.Utils.ByteMember.#ctor(System.ArraySegment{System.Byte}@,System.Int32,System.Byte)">
+        <member name="M:OpenLobby.Utility.Utils.ByteMember.#ctor(System.ArraySegment{System.Byte}@,System.Int32@,System.Byte)">
             <summary>
-            Constructs from the body at index set to value
+            Creates using the byte at index of segment
             </summary>
-            <param name="body"></param>
-            <param name="index"></param>
-            <param name="value"></param>
+            <param name="segment">The segment being indexed</param>
+            <param name="index">The index of the byte</param>
+            <param name="value">The value to initalize</param>
         </member>
-        <member name="M:OpenLobby.Utility.Utils.ByteMember.#ctor(System.ArraySegment{System.Byte}@,System.Int32)">
+        <member name="M:OpenLobby.Utility.Utils.ByteMember.#ctor(System.ArraySegment{System.Byte}@,System.Int32@)">
             <summary>
             Constructs using the byte at index
             </summary>
-            <param name="body"></param>
-            <param name="index"></param>
+            <param name="segment">The segment being indexed</param>
+            <param name="index">The index of the byte</param>
         </member>
         <member name="T:OpenLobby.Utility.Utils.ByteString">
             <summary>
@@ -397,7 +404,7 @@
             Helper functions
             </summary>
         </member>
-        <member name="M:OpenLobby.Utility.Utils.Helper.SetUshort(System.UInt16,System.Int32,System.Int32,System.ArraySegment{System.Byte})">
+        <member name="M:OpenLobby.Utility.Utils.Helper.SetUshort(System.UInt16@,System.Int32@,System.Int32@,System.ArraySegment{System.Byte}@)">
             <summary>
             Sets the bytes from ushort into arr at index i1 and i2
             </summary>
@@ -408,7 +415,7 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:OpenLobby.Utility.Utils.Helper.GetByteStringLength(System.String[])">
+        <member name="M:OpenLobby.Utility.Utils.Helper.SumOfByteStrings(System.String[])">
             <summary>
             Counts Length of the ByteStrings
             </summary>
@@ -416,20 +423,14 @@
             <returns>Length if Length is less than <seealso cref="F:System.UInt16.MaxValue"/> </returns>
             <exception cref="T:System.ArgumentOutOfRangeException">The total Length of the strings were too long</exception>
         </member>
-        <member name="M:OpenLobby.Utility.Utils.Helper.GetStringLength(System.String[])">
+        <member name="M:OpenLobby.Utility.Utils.Helper.SumOfStrings(System.String[])">
             <summary>
-            Counts Length of the strings
+            Sums the length of the strings
             </summary>
             <param name="strings">The strings to count</param>
-            <returns>Length if Length is less than <seealso cref="F:System.UInt16.MaxValue"/> </returns>
+            <returns>Sum if it is less than <seealso cref="F:System.UInt16.MaxValue"/> </returns>
             <exception cref="T:System.ArgumentOutOfRangeException">The total Length of the strings were too long</exception>
-        </member>
-        <member name="M:OpenLobby.Utility.Utils.Helper.GetIP(System.ArraySegment{System.Byte})">
-            <summary>
-            Creates IPv4 string form array
-            </summary>
-            <param name="arraySegment">Must have at least 4 elements</param>
-            <returns>The IP string</returns>
+            <exception cref="T:System.NullReferenceException">Strings or it's element was null</exception>
         </member>
         <member name="T:OpenLobby.Utility.Utils.Lobby">
             <summary>
@@ -487,6 +488,26 @@
             An array of ByteStrings
             </summary>
         </member>
+        <member name="T:OpenLobby.Utility.Utils.StringArray.SegmentOutOfRange">
+            <summary>
+            Segment must have exact required length, use <see cref="M:OpenLobby.Utility.Utils.StringArray.GetRequiredLength(System.String[])"/> to get exact length.
+            </summary>
+        </member>
+        <member name="T:OpenLobby.Utility.Utils.StringArray.StringArrayOutOfRange">
+            <summary>
+            Segment was null, to encode/decode the segment must be provided.
+            </summary>
+        </member>
+        <member name="T:OpenLobby.Utility.Utils.StringArray.StringOutOfRange">
+            <summary>
+            A string was longer than 255 bytes.
+            </summary>
+        </member>
+        <member name="T:OpenLobby.Utility.Utils.StringArray.BadString">
+            <summary>
+            A string was null or empty, every string must have 1 or more characters for safety.
+            </summary>
+        </member>
         <member name="P:OpenLobby.Utility.Utils.StringArray.Count">
             <summary>
             Total number of strings
@@ -494,29 +515,30 @@
         </member>
         <member name="P:OpenLobby.Utility.Utils.StringArray.Item(System.Int32)">
             <summary>
-            Index the internal byte stream
+            Indexes the array
             </summary>
-            <param name="index"></param>
-            <returns></returns>
+            <param name="index">The index</param>
+            <returns>The string at index</returns>
             <exception cref="T:System.IndexOutOfRangeException"></exception>
         </member>
-        <member name="M:OpenLobby.Utility.Utils.StringArray.#ctor(System.ArraySegment{System.Byte}@,System.Int32,System.String[])">
+        <member name="M:OpenLobby.Utility.Utils.StringArray.#ctor(System.ArraySegment{System.Byte}@,System.String[])">
             <summary>
             Constructs the string array into the array segment from the start index
             </summary>
-            <param name="body">The array segment the strings are stored in</param>
-            <param name="start">The starting index of the stream</param>
-            <param name="strings">The strings to place in the array segment</param>
-            <exception cref="T:System.ArgumentException">The given string was too long</exception>
+            <param name="segment">The correctly sized byte segment</param>
+            <param name="strings">The strings to place in the segment</param>
+            <exception cref="T:OpenLobby.Utility.Utils.StringArray.StringArrayOutOfRange"></exception>
+            <exception cref="T:OpenLobby.Utility.Utils.StringArray.StringOutOfRange"></exception>
+            <exception cref="T:OpenLobby.Utility.Utils.StringArray.SegmentOutOfRange"></exception>
         </member>
-        <member name="M:OpenLobby.Utility.Utils.StringArray.#ctor(System.ArraySegment{System.Byte}@,System.Int32)">
+        <member name="M:OpenLobby.Utility.Utils.StringArray.#ctor(System.ArraySegment{System.Byte}@)">
             <summary>
             Reconstructs using the array segment and starting index
             </summary>
-            <param name="body">The array segment with the strings</param>
-            <param name="start">The starting index of the stream</param>
+            <param name="segment">The correctly sized byte segment</param>
+            <exception cref="T:OpenLobby.Utility.Utils.StringArray.BadString"></exception>
         </member>
-        <member name="M:OpenLobby.Utility.Utils.StringArray.GetHeaderSize(System.String[])">
+        <member name="M:OpenLobby.Utility.Utils.StringArray.GetRequiredLength(System.String[])">
             <summary>
             Gets the StringArray header that encodes an array of strings
             </summary>

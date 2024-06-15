@@ -12,11 +12,13 @@ namespace Core.Multiplayer
 {
     public class OpenLobby : Singleton<OpenLobby>
     {
-        public bool IsLocal { get => _local; set => _local = value; }
+        public bool IsLocal { get => _local; private set => _local = value; }
         [SerializeField] private bool _local;
 
-        public bool Online { get; private set; }
-        public Client Server { get; private set; }
+        public bool Online { get => _online; private set => _online = value; }
+        [SerializeField] private bool _online;
+        
+        private Client Server { get; set; }
 
         public delegate void OnReceivedDelegate(Transmission t);
         public OnReceivedDelegate MessageReceivedEvent;
@@ -24,8 +26,8 @@ namespace Core.Multiplayer
         public void EnqueueTransmission(Transmission t) => _queue.Enqueue(t);
         private Queue<Transmission> _queue;
 
-        [Button("Retry Connection"), HideIf("@Online")]
-        protected override async void SingletonAwakened()
+        [Button("Connect"), HideIf("@Online")]
+        protected override void SingletonAwakened()
         {
             if (Online) return;
 
@@ -38,21 +40,15 @@ namespace Core.Multiplayer
             var address = IsLocal ? IPAddress.Loopback : IPAddress.Parse(ip);
 
             // Create socket
-            Socket socket = new(SocketType.Stream, ProtocolType.Tcp);
-            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            var lep = new IPEndPoint(IPAddress.Any, 0);
+            var lep = new IPEndPoint(IPAddress.Any, port);
             var rep = new IPEndPoint(address, port);
-
-            // Connect
-            socket.Bind(lep);
-            await socket.ConnectAsync(rep);
-
+            Server = new Client(lep, rep);
+            
             // Init
-            Server = new(socket);
             _queue = new();
+            Online = true;
 
             // Exit
-            Online = true;
             Debug.Log("Successfully connected to OpenLobby");
         }
 
@@ -64,9 +60,11 @@ namespace Core.Multiplayer
             (bool success, Transmission trms) = Server.TryGetTransmission();
             while (success)
             {
-                MessageReceivedEvent?.Invoke(trms);
-                (success, trms) = Server.TryGetTransmission();
-                Debug.Log("Received OpenLobby trms");
+                if (MessageReceivedEvent != null)
+                {
+                    MessageReceivedEvent.Invoke(trms);
+                    (success, trms) = Server.TryGetTransmission();
+                }
             }
 
             // Send transmissions
@@ -74,17 +72,20 @@ namespace Core.Multiplayer
             {
                 var t = _queue.Dequeue();
                 Server.Send(t.Payload);
-                Debug.Log("Sent OpenLobby trms");
             }
         }
 
+        [Button("Disconnect"), HideIf("@!Online")]
         protected override void SingletonDestroyed()
         {
             base.SingletonDestroyed();
             if (!Online) return;
 
             Server.Disconnect();
+            Server = null;
+            _queue = null;
             Online = false;
+
             Debug.Log("OpenLobby has been disconnected");
         }
     }

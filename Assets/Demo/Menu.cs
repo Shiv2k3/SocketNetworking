@@ -21,13 +21,11 @@ namespace Core.Demo
             DisconnectButton.onClick.AddListener(Disconnect);
         }
 
-        [Button("Host Lobby")]
         void HostLobby()
         {
             Multiplayer.Connections.Network.I.HostLobby(LobbyName.text, LobbyPassword.text, Public.isOn, byte.Parse(MaxPlayers.text));
         }
 
-        [Button("Disconnect")]
         void Disconnect()
         {
             Multiplayer.Connections.Network.I.Disconnect();
